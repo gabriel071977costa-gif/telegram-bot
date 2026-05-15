@@ -6,7 +6,7 @@ TOKEN = os.getenv("BOT_TOKEN")
 # Saludo personalizado con el nombre del usuario
 def start(update, context):
     user = update.message.from_user
-    update.message.reply_text(f"Hola {user.first_name}, soy tu bot de trabajo.")
+    update.message.reply_text(f"Hola {user.first_name}, Ruk el bot de Gabriel.")
 
 # Guardar información que el usuario envía con /guardar
 def guardar(update, context):
