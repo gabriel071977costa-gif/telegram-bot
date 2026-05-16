@@ -1,45 +1,38 @@
 import os
-import telebot # Usaremos esta que es más ligera para Railway
-import google.generativeai as genai
+import telebot
+from google import genai
 
-# Configuración de Tokens
-TOKEN = os.getenv("TOKEN_BOT")
-GEMINI_KEY = os.getenv("GEMINI_KEY") # Saca tu clave en aistudio.google.com
+# Leemos las variables exactas
+TOKEN = os.getenv("BOT_TOKEN")
+G_KEY = os.getenv("GEMINI_KEY")
 
-# Configurar la IA
-genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+# Validación para que tú veas el error en los Logs si algo falta
+if not TOKEN:
+    print("❌ ERROR: BOT_TOKEN no encontrado.")
+if not G_KEY:
+    print("⚠️ AVISO: GEMINI_KEY no encontrada. El bot no tendrá IA.")
 
+# Iniciar Bot
 bot = telebot.TeleBot(TOKEN)
+# Iniciar IA (usando la librería nueva que pusiste en requirements)
+client = genai.Client(api_key=G_KEY) if G_KEY else None
 
 @bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, f"Hola {message.from_user.first_name}, soy Ruk, el bot de Gabriel. ¿De qué quieres hablar hoy?")
+def start(message):
+    bot.reply_to(message, "¡Ruk ha renacido! Proyecto limpio y funcionando.")
 
 @bot.message_handler(func=lambda message: True)
-def chat_natural(message):
-    user_id = message.from_user.id
-    user_name = message.from_user.first_name
-    texto_usuario = message.text
-
-    # 1. Guardar en el archivo (Recuerda que en Railway esto es temporal)
-    with open("conversaciones.txt", "a", encoding="utf-8") as f:
-        f.write(f"{user_name}: {texto_usuario}\n")
-
-    # 2. Leer los últimos recuerdos para darle contexto a la IA
-    contexto = ""
-    if os.path.exists("conversaciones.txt"):
-        with open("conversaciones.txt", "r", encoding="utf-8") as f:
-            # Leemos las últimas 10 líneas para que no se sature
-            contexto = "".join(f.readlines()[-10:])
-
-    # 3. Pedirle a la IA que responda siendo "Ruk"
-    prompt = f"Eres Ruk, un bot creado por Gabriel. Tu historial reciente es:\n{contexto}\nUsuario dice: {texto_usuario}\nResponde de forma natural y breve:"
-    
-    try:
-        response = model.generate_content(prompt)
-        bot.reply_to(message, response.text)
-    except Exception as e:
-        bot.reply_to(message, "Estoy procesando mucha info, ¡háblame de nuevo!")
+def responder(message):
+    if client:
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.0-flash", 
+                contents=message.text
+            )
+            bot.reply_to(message, response.text)
+        except Exception as e:
+            bot.reply_to(message, "Error al pensar con la IA.")
+    else:
+        bot.reply_to(message, "Estoy vivo, pero no tengo configurada mi IA.")
 
 bot.polling()
