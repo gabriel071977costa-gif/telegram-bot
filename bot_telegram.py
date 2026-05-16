@@ -3,7 +3,7 @@ import telebot # Usaremos esta que es más ligera para Railway
 import google.generativeai as genai
 
 # Configuración de Tokens
-TOKEN = os.getenv("BOT_TOKEN")
+TOKEN = os.getenv("TOKEN_BOT")
 GEMINI_KEY = os.getenv("GEMINI_KEY") # Saca tu clave en aistudio.google.com
 
 # Configurar la IA
