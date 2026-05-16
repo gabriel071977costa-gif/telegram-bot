@@ -4,7 +4,7 @@ from google import genai
 
 # Leemos las variables exactas
 TOKEN = os.getenv("BOT_TOKEN")
-G_KEY = os.getenv("GEMINI_KEY")
+G_KEY = os.getenv("GÉMINI_KEY")
 
 # Validación para que tú veas el error en los Logs si algo falta
 if not TOKEN:
