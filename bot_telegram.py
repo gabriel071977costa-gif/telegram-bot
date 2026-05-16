@@ -48,9 +48,9 @@ def send_welcome(message):
 def chat(message):
     if client:
         try:
-            # Usamos gemini-2.0-flash que es el más moderno y rápido
+            # Usamos gemini-2.5-flash que es el más moderno y rápido
             response = client.models.generate_content(
-                model="gemini-2.0-flash", 
+                model="gemini-2.5-flash", 
                 contents=message.text
             )
             bot.reply_to(message, response.text)
