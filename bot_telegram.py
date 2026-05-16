@@ -1,43 +1,45 @@
 import os
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import telebot # Usaremos esta que es más ligera para Railway
+import google.generativeai as genai
 
+# Configuración de Tokens
 TOKEN = os.getenv("BOT_TOKEN")
+GEMINI_KEY = os.getenv("GEMINI_KEY") # Saca tu clave en aistudio.google.com
 
-# Saludo inicial con /start
-def start(update, context):
-    user = update.message.from_user
-    update.message.reply_text(f"Hola {user.first_name}, Hola soy Ruk el bot de Gabriel. ¿Con quién hablo?")
+# Configurar la IA
+genai.configure(api_key=GEMINI_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-# Conversación libre
-def conversar(update, context):
-    user = update.message.from_user
-    texto = update.message.text.lower()
+bot = telebot.TeleBot(TOKEN)
 
-    # Guardar conversación en archivo
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.reply_to(message, f"Hola {message.from_user.first_name}, soy Ruk, el bot de Gabriel. ¿De qué quieres hablar hoy?")
+
+@bot.message_handler(func=lambda message: True)
+def chat_natural(message):
+    user_id = message.from_user.id
+    user_name = message.from_user.first_name
+    texto_usuario = message.text
+
+    # 1. Guardar en el archivo (Recuerda que en Railway esto es temporal)
     with open("conversaciones.txt", "a", encoding="utf-8") as f:
-        f.write(f"{user.id} ({user.first_name}): {texto}\n")
+        f.write(f"{user_name}: {texto_usuario}\n")
 
-    # Respuestas personalizadas
-    if "gabriel" in texto:
-        update.message.reply_text("¡Sí! Sos mi creador Gabriel.")
-        # Buscar recuerdos previos
-        try:
-            with open("conversaciones.txt", "r", encoding="utf-8") as f:
-                lineas = f.readlines()
-            recuerdos = [l for l in lineas if str(user.id) in l and "fútbol" in l]
-            if recuerdos:
-                update.message.reply_text("Me acuerdo que ayer hablamos de fútbol.")
-        except FileNotFoundError:
-            update.message.reply_text("Todavía no tengo recuerdos guardados.")
-    elif "fútbol" in texto:
-        update.message.reply_text("¡Qué bueno! Voy a recordar que te gusta hablar de fútbol.")
-    else:
-        update.message.reply_text(f"Hola {user.first_name}, gracias por contarme eso.")
+    # 2. Leer los últimos recuerdos para darle contexto a la IA
+    contexto = ""
+    if os.path.exists("conversaciones.txt"):
+        with open("conversaciones.txt", "r", encoding="utf-8") as f:
+            # Leemos las últimas 10 líneas para que no se sature
+            contexto = "".join(f.readlines()[-10:])
 
-# Configuración del bot
-updater = Updater(TOKEN)
-updater.dispatcher.add_handler(CommandHandler("start", start))
-updater.dispatcher.add_handler(MessageHandler(Filters.text, conversar))
+    # 3. Pedirle a la IA que responda siendo "Ruk"
+    prompt = f"Eres Ruk, un bot creado por Gabriel. Tu historial reciente es:\n{contexto}\nUsuario dice: {texto_usuario}\nResponde de forma natural y breve:"
+    
+    try:
+        response = model.generate_content(prompt)
+        bot.reply_to(message, response.text)
+    except Exception as e:
+        bot.reply_to(message, "Estoy procesando mucha info, ¡háblame de nuevo!")
 
-updater.start_polling()
-updater.idle()
+bot.polling()
