@@ -1,42 +1,79 @@
 import os
 import telebot
-from google import genai  # Nueva librería
+from google import genai
 
-# --- Tu lógica de claves que ya funciona ---
-TOKEN = os.getenv("BOT_TOKEN") or os.getenv("BOT DE TOKEN")
-G_KEY = os.getenv("GEMINI_KEY") or os.getenv("GÉMINIS_KEY")
+# 1. BUSCADOR DE VARIABLES (Busca las 4 variantes que mencionas)
+# Esto evita el error NoneType porque siempre intentará encontrar algo
+def buscar_token():
+    # Buscamos en todas las formas que Railway ha inventado en tu panel
+    opciones = [
+        os.getenv("TOKEN_BOT"),
+        os.getenv("BOT_TOKEN"),
+        os.getenv("BOT DE TOKEN"),  # Por si vuelve a aparecer con espacios
+        os.getenv("TOKEN")
+    ]
+    for valor in opciones:
+        if valor:
+            # .strip() quita espacios invisibles y .replace(" ", "") quita espacios en medio
+            return valor.strip().replace(" ", "")
+    return None
+
+def buscar_gemini():
+    opciones = [
+        os.getenv("GEMINI_KEY"),
+        os.getenv("GÉMINIS_KEY"),
+        os.getenv("GEMINIS_KEY"),
+        os.getenv("GÉMINI_KEY")
+    ]
+    for valor in opciones:
+        if valor:
+            return valor.strip()
+    return None
+
+# Asignamos los valores limpios
+TOKEN = buscar_token()
+G_KEY = buscar_gemini()
+
+# 2. VALIDACIÓN ANTES DE INICIAR (Para que no explote la línea 9)
+if TOKEN is None:
+    print("❌ ERROR: No se encontró el TOKEN en ninguna de las 4 variantes.")
+    # Creamos un token falso temporal para que el código no dé error de compilación
+    # pero el bot no funcionará hasta que Railway detecte la variable.
+    TOKEN = "dummy_token" 
 
 bot = telebot.TeleBot(TOKEN)
 
-# --- Configuración de google-genai ---
+# 3. CONFIGURACIÓN DE IA (google-genai)
 client = None
 if G_KEY:
     try:
-        # Inicializamos el cliente moderno
         client = genai.Client(api_key=G_KEY)
-        print("✅ IA de Gemini configurada con la nueva librería.")
+        print("✅ IA de Gemini configurada.")
     except Exception as e:
-        print(f"❌ Error al configurar la IA: {e}")
+        print(f"❌ Error en Gemini: {e}")
 
-# --- Handler para mensajes ---
+# --- Handlers ---
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.reply_to(message, "¡Ruk activo! He revisado todas las variantes de las claves.")
+
 @bot.message_handler(func=lambda message: True)
-def chat_natural(message):
+def chat(message):
     if client:
         try:
-            # Nueva forma de generar contenido
             response = client.models.generate_content(
                 model="gemini-2.0-flash", 
                 contents=message.text
             )
             bot.reply_to(message, response.text)
         except Exception as e:
-            print(f"Error en Gemini: {e}")
-            bot.reply_to(message, "Tuve un error al procesar el mensaje con la IA.")
+            bot.reply_to(message, "Error al procesar con IA.")
     else:
-        # Respuesta si no hay clave de IA
-        bot.reply_to(message, "Hola, recibí tu mensaje pero no tengo mi clave de IA configurada.")
+        bot.reply_to(message, "Vivo, pero sin GEMINI_KEY.")
 
-# --- Inicio ---
-if TOKEN:
-    print("🚀 Bot encendido...")
-    bot.polling()
+# --- Inicio Seguro ---
+if TOKEN != "dummy_token":
+    print("🚀 Iniciando el polling...")
+    bot.polling(none_stop=True)
+else:
+    print("⚠️ El bot no inició porque el TOKEN sigue siendo None en Railway.")
