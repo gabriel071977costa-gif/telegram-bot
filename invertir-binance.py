@@ -95,5 +95,16 @@ def ejecutar_operacion(symbol="BTCUSDT", cantidad=0.001):
             quantity=cantidad
         )
         return f"✅ Venta ejecutada: {orden}"
+
+
+    if __name__ == "__main__":
+    # Probar conexión y obtener saldo de prueba
+    try:
+        info = client.get_account()
+        print("✅ Conexión correcta a Binance Testnet.")
+        print("Balances:", info["balances"])
+    except Exception as e:
+        print("❌ Error de conexión:", e)
+
     else:
         return "⚠️ Sin acción recomendada por Gemini."
