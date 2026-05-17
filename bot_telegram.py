@@ -5,7 +5,8 @@ import time
 
 # --- IMPORTAMOS LA LÓGICA DE INVERSIÓN ---
 # Este módulo contiene la integración con Binance Testnet y Gemini
-from invertir import ejecutar_operacion
+from invertir_binance import ejecutar_operacion
+
 
 # --- BUSCADOR INTELIGENTE DE CLAVES (Tu lógica que funciona) ---
 def buscar_clave_gemini():
