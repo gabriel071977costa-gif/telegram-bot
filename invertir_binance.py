@@ -12,13 +12,17 @@ from google import genai
 import datetime
 
 # ------------------------------------------------------------
-# CONFIGURACIÓN DE CLAVES (Railway)
+# CONFIGURACIÓN DE CLAVES (Railway / Local)
 # ------------------------------------------------------------
 API_KEY = os.getenv("BINANCE_TEST_KEY")
 API_SECRET = os.getenv("BINANCE_TEST_SECRET")
 
 # Cliente Binance Testnet
 client = Client(API_KEY, API_SECRET, testnet=True)
+
+# 🔧 Sincronizar con el servidor de Binance para evitar error -1021
+server_time = client.get_server_time()
+client.TIME_OFFSET = server_time['serverTime'] - int(datetime.datetime.now().timestamp() * 1000)
 
 # Cliente Gemini
 G_KEY = os.getenv("GEMINI_KEY")
