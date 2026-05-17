@@ -1,19 +1,25 @@
+# bot_telegram.py
+# ------------------------------------------------------------
+# Bot de Telegram que controla todo con Gemini y Binance.
+# Incluye:
+#   - Lógica de claves y fallback de Gemini (tu versión estable)
+#   - Comando /invertir manual
+#   - Comando /balance con CSV real
+#   - Ciclo automático diario con 10 criptos principales
+# ------------------------------------------------------------
+
 import os
 import telebot
-from google import genai
+import threading
 import time
+from google import genai
 
 # --- IMPORTAMOS LA LÓGICA DE INVERSIÓN ---
-# Este módulo contiene la integración con Binance Testnet y Gemini
-from invertir_binance import ejecutar_operacion
+from bot_binance import ciclo_diario, ejecutar_operacion
+from balance_diario import balance_diario, calcular_balance
 
-
-# --- BUSCADOR INTELIGENTE DE CLAVES (Tu lógica que funciona) ---
+# --- BUSCADOR INTELIGENTE DE CLAVES ---
 def buscar_clave_gemini():
-    """
-    Railway a veces guarda las variables con nombres distintos.
-    Esta función busca todas las variantes posibles de la clave de Gemini.
-    """
     opciones = [
         os.getenv("GEMINI_KEY"),
         os.getenv("GÉMINIS_KEY"),
@@ -26,7 +32,6 @@ def buscar_clave_gemini():
     return None
 
 # --- CONFIGURACIÓN DE TOKENS ---
-# Token del bot de Telegram (se guarda en Railway como BOT_TOKEN o TOKEN_BOT)
 raw_token = os.getenv("TOKEN_BOT") or os.getenv("BOT_TOKEN")
 TOKEN = raw_token.strip().replace(" ", "") if raw_token else None
 
@@ -52,39 +57,32 @@ else:
 # --- COMANDO /start ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    """
-    Mensaje inicial cuando el usuario escribe /start.
-    """
     bot.reply_to(message, "¡Ruk activo! Ya reconozco tus claves y estoy listo para hablar, Gabriel.")
 
-# --- COMANDO /invertir ---
+# --- COMANDO /invertir manual ---
 @bot.message_handler(commands=['invertir'])
 def invertir_handler(message):
-    """
-    Ejecuta la lógica de inversión en Binance Testnet usando Gemini.
-    Llama a la función ejecutar_operacion() del archivo invertir.py
-    y devuelve el resultado al chat de Telegram.
-    """
-    resultado = ejecutar_operacion()
+    resultado = ejecutar_operacion("BTCUSDT", cantidad=0.001)
     bot.reply_to(message, resultado)
 
-# --- CHAT GENERAL ---
+# --- COMANDO /balance ---
+@bot.message_handler(commands=['balance'])
+def balance_handler(message):
+    ganancia_total = calcular_balance()
+    ganancia_hoy = balance_diario()
+    bot.reply_to(message, f"📊 Ganancia acumulada: {ganancia_total:.2f} USDT\n📅 Ganancia de hoy: {ganancia_hoy:.2f} USDT")
+
+# --- CHAT GENERAL (Gemini conversacional) ---
 @bot.message_handler(func=lambda message: True)
 def chat(message):
-    """
-    Responde cualquier mensaje usando Gemini.
-    Si Gemini falla, intenta con otro modelo como fallback.
-    """
     if client:
         try:
-            # Modelo más moderno y rápido
             response = client.models.generate_content(
                 model="gemini-2.5-flash", 
                 contents=message.text
             )
             bot.reply_to(message, response.text)
         except Exception as e:
-            # Fallback automático si falla el modelo 2.5
             try:
                 response = client.models.generate_content(
                     model="gemini-1.5-flash", 
@@ -97,12 +95,23 @@ def chat(message):
     else:
         bot.reply_to(message, "No tengo configurada la clave de Gemini (G_KEY es None).")
 
+# --- CICLO AUTOMÁTICO DIARIO ---
+def modo_automatico():
+    while True:
+        resultados = ciclo_diario()
+        resumen = "\n".join(resultados)
+        ganancia_hoy = balance_diario()
+        bot.send_message(message.chat.id, f"⏱️ Resultados diarios:\n{resumen}\n📅 Ganancia del día: {ganancia_hoy:.2f} USDT")
+        time.sleep(86400)  # espera 1 día
+
+threading.Thread(target=modo_automatico, daemon=True).start()
+
 # --- INICIO SEGURO DEL BOT ---
 if __name__ == "__main__":
     try:
         print("🚀 Limpiando conexión previa...")
         bot.remove_webhook()
-        time.sleep(2)  # Pausa para evitar error 409 Conflict
+        time.sleep(2)
         print("🚀 Ruk iniciando polling... ¡Ya puedes escribirle!")
         bot.polling(none_stop=True, interval=0, timeout=20)
     except Exception as e:
