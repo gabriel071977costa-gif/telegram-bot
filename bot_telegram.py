@@ -3,9 +3,16 @@ import telebot
 from google import genai
 import time
 
+# --- IMPORTAMOS LA LÓGICA DE INVERSIÓN ---
+# Este módulo contiene la integración con Binance Testnet y Gemini
+from invertir import ejecutar_operacion
+
 # --- BUSCADOR INTELIGENTE DE CLAVES (Tu lógica que funciona) ---
 def buscar_clave_gemini():
-    # Buscamos todas las variantes que Railway suele inventar
+    """
+    Railway a veces guarda las variables con nombres distintos.
+    Esta función busca todas las variantes posibles de la clave de Gemini.
+    """
     opciones = [
         os.getenv("GEMINI_KEY"),
         os.getenv("GÉMINIS_KEY"),
@@ -17,13 +24,15 @@ def buscar_clave_gemini():
             return valor.strip()
     return None
 
-# Buscamos el Token (que ya te funciona) y la Key
-# Añadimos limpieza de espacios al Token por si acaso
+# --- CONFIGURACIÓN DE TOKENS ---
+# Token del bot de Telegram (se guarda en Railway como BOT_TOKEN o TOKEN_BOT)
 raw_token = os.getenv("TOKEN_BOT") or os.getenv("BOT_TOKEN")
 TOKEN = raw_token.strip().replace(" ", "") if raw_token else None
+
+# Clave de Gemini
 G_KEY = buscar_clave_gemini()
 
-# --- CONFIGURACIÓN DE IA ---
+# --- CONFIGURACIÓN DE CLIENTE GEMINI ---
 client = None
 if G_KEY:
     try:
@@ -32,30 +41,49 @@ if G_KEY:
     except Exception as e:
         print(f"❌ Error de configuración: {e}")
 
-# Evitamos que el código explote si el Token no se encuentra antes de iniciar telebot
+# --- INICIO DEL BOT TELEGRAM ---
 if TOKEN:
     bot = telebot.TeleBot(TOKEN)
 else:
     print("❌ ERROR: No se encontró el TOKEN_BOT en Railway.")
     exit(1)
 
-# --- RESPUESTAS DEL BOT ---
+# --- COMANDO /start ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
+    """
+    Mensaje inicial cuando el usuario escribe /start.
+    """
     bot.reply_to(message, "¡Ruk activo! Ya reconozco tus claves y estoy listo para hablar, Gabriel.")
 
+# --- COMANDO /invertir ---
+@bot.message_handler(commands=['invertir'])
+def invertir_handler(message):
+    """
+    Ejecuta la lógica de inversión en Binance Testnet usando Gemini.
+    Llama a la función ejecutar_operacion() del archivo invertir.py
+    y devuelve el resultado al chat de Telegram.
+    """
+    resultado = ejecutar_operacion()
+    bot.reply_to(message, resultado)
+
+# --- CHAT GENERAL ---
 @bot.message_handler(func=lambda message: True)
 def chat(message):
+    """
+    Responde cualquier mensaje usando Gemini.
+    Si Gemini falla, intenta con otro modelo como fallback.
+    """
     if client:
         try:
-            # Usamos gemini-2.5-flash que es el más moderno y rápido
+            # Modelo más moderno y rápido
             response = client.models.generate_content(
                 model="gemini-2.5-flash", 
                 contents=message.text
             )
             bot.reply_to(message, response.text)
         except Exception as e:
-            # Si el 2.0 falla por algo, intenta con el 1.5-flash automáticamente
+            # Fallback automático si falla el modelo 2.5
             try:
                 response = client.models.generate_content(
                     model="gemini-1.5-flash", 
@@ -64,16 +92,16 @@ def chat(message):
                 bot.reply_to(message, response.text)
             except Exception as e2:
                 print(f"Error en Gemini: {e2}")
-                bot.reply_to(message, "Error de IA: Revisa si tu clave de Google AI Studio está activa o si superaste el límite gratuito.")
+                bot.reply_to(message, "Error de IA: revisa si tu clave de Google AI Studio está activa o si superaste el límite gratuito.")
     else:
         bot.reply_to(message, "No tengo configurada la clave de Gemini (G_KEY es None).")
 
-# --- INICIO SEGURO (Evita Error 409 Conflict) ---
+# --- INICIO SEGURO DEL BOT ---
 if __name__ == "__main__":
     try:
         print("🚀 Limpiando conexión previa...")
         bot.remove_webhook()
-        time.sleep(2) # Pausa de seguridad para que Telegram cierre la sesión vieja
+        time.sleep(2)  # Pausa para evitar error 409 Conflict
         print("🚀 Ruk iniciando polling... ¡Ya puedes escribirle!")
         bot.polling(none_stop=True, interval=0, timeout=20)
     except Exception as e:
