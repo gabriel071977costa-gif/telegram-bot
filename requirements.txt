@@ -1,3 +1,4 @@
-pyTelegramBotAPI
-binance
+python-binance
 google-genai
+pyTelegramBotAPI
+
