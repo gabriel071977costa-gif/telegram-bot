@@ -1,4 +1,4 @@
-# invertir-binance.py
+# invertir_binance.py
 # ------------------------------------------------------------
 # Este módulo maneja la lógica de inversión del bot Ruk.
 # Se conecta a Binance Testnet usando las claves guardadas en Railway
@@ -13,9 +13,6 @@ import datetime
 
 # ------------------------------------------------------------
 # CONFIGURACIÓN DE CLAVES (Railway)
-# Las claves se guardan en Railway como variables de entorno:
-# BINANCE_TEST_KEY = <tu API Key>
-# BINANCE_TEST_SECRET = <tu API Secret>
 # ------------------------------------------------------------
 API_KEY = os.getenv("BINANCE_TEST_KEY")
 API_SECRET = os.getenv("BINANCE_TEST_SECRET")
@@ -29,15 +26,10 @@ genai_client = genai.Client(api_key=G_KEY) if G_KEY else None
 
 # ------------------------------------------------------------
 # FUNCIÓN: obtener datos históricos
-# Descarga velas (candlesticks) de los últimos 2 años, intervalo diario.
 # ------------------------------------------------------------
 def obtener_datos_historicos(symbol="BTCUSDT"):
-    # Fecha de inicio: hace 2 años
     fecha_inicio = (datetime.datetime.now() - datetime.timedelta(days=730)).strftime("%d %b %Y %H:%M:%S")
-    # Velas diarias
     klines = client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, fecha_inicio)
-    
-    # Procesamos datos relevantes: fecha, apertura, cierre, volumen
     datos = []
     for k in klines:
         datos.append({
@@ -50,10 +42,6 @@ def obtener_datos_historicos(symbol="BTCUSDT"):
 
 # ------------------------------------------------------------
 # FUNCIÓN: decisión de inversión con Gemini
-# Analiza los datos históricos y detecta:
-# - Bajadas o subidas fuertes
-# - Volumen alto (muchos participantes)
-# - Horarios pico de actividad
 # ------------------------------------------------------------
 def decision_inversion(symbol="BTCUSDT"):
     datos = obtener_datos_historicos(symbol)
@@ -75,7 +63,6 @@ def decision_inversion(symbol="BTCUSDT"):
 
 # ------------------------------------------------------------
 # FUNCIÓN: ejecutar operación
-# Según la decisión de Gemini, ejecuta una orden de compra o venta en Testnet.
 # ------------------------------------------------------------
 def ejecutar_operacion(symbol="BTCUSDT", cantidad=0.001):
     decision = decision_inversion(symbol)
@@ -95,16 +82,16 @@ def ejecutar_operacion(symbol="BTCUSDT", cantidad=0.001):
             quantity=cantidad
         )
         return f"✅ Venta ejecutada: {orden}"
+    else:
+        return "⚠️ Sin acción recomendada por Gemini."
 
-
-    if __name__ == "__main__":
-    # Probar conexión y obtener saldo de prueba
+# ------------------------------------------------------------
+# BLOQUE DE PRUEBA LOCAL
+# ------------------------------------------------------------
+if __name__ == "__main__":
     try:
         info = client.get_account()
         print("✅ Conexión correcta a Binance Testnet.")
         print("Balances:", info["balances"])
     except Exception as e:
         print("❌ Error de conexión:", e)
-
-    else:
-        return "⚠️ Sin acción recomendada por Gemini."
