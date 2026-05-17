@@ -5,7 +5,7 @@ from binance.enums import *
 from google import genai  # librería para Gemini, según tu setup
 
 # Configuración Binance Testnet
-API_KEY = os.getenv("BINANCE_TEST_KEY")
+API_KEY = os.getenv("CLAVE DE PRUEBA DE BINANCE")
 API_SECRET = os.getenv("BINANCE_TEST_SECRET")
 client = Client(API_KEY, API_SECRET, testnet=True)
 
