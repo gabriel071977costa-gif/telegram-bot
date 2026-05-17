@@ -1,16 +1,19 @@
 # bot_binance.py
 # ------------------------------------------------------------
-# Lógica de inversión automática con Gemini y Binance.
+# Lógica de inversión automática del bot Ruk.
+# Se conecta a Binance Testnet y usa Gemini para analizar datos
+# históricos y decidir comprar o vender.
 # ------------------------------------------------------------
 
 import os
 import datetime
-import time
 from binance.client import Client
 from binance.enums import *
 from google import genai
-from balance_diario import registrar_operacion, balance_diario
 
+# ------------------------------------------------------------
+# CONFIGURACIÓN DE CLAVES
+# ------------------------------------------------------------
 API_KEY = os.getenv("BINANCE_TEST_KEY")
 API_SECRET = os.getenv("BINANCE_TEST_SECRET")
 
@@ -24,9 +27,10 @@ client.TIME_OFFSET = server_time['serverTime'] - int(datetime.datetime.now().tim
 G_KEY = os.getenv("GEMINI_KEY")
 genai_client = genai.Client(api_key=G_KEY) if G_KEY else None
 
-TOP_SYMBOLS = ["BTCUSDT","ETHUSDT","BNBUSDT","ADAUSDT","XRPUSDT","SOLUSDT","DOGEUSDT","DOTUSDT","MATICUSDT","LTCUSDT"]
-
-def obtener_datos_historicos(symbol):
+# ------------------------------------------------------------
+# FUNCIÓN: obtener datos históricos
+# ------------------------------------------------------------
+def obtener_datos_historicos(symbol="BTCUSDT"):
     fecha_inicio = (datetime.datetime.now() - datetime.timedelta(days=730)).strftime("%d %b %Y %H:%M:%S")
     klines = client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, fecha_inicio)
     datos = []
@@ -39,11 +43,16 @@ def obtener_datos_historicos(symbol):
         })
     return datos
 
-def decision_inversion(symbol):
+# ------------------------------------------------------------
+# FUNCIÓN: decisión de inversión con Gemini
+# ------------------------------------------------------------
+def decision_inversion(symbol="BTCUSDT"):
     datos = obtener_datos_historicos(symbol)
     prompt = f"""
     Analiza estos datos históricos de {symbol} de los últimos 2 años (día a día).
-    Detecta caídas o subidas fuertes con volumen alto.
+    Detecta:
+    - Bajadas o subidas fuertes con volumen alto
+    - Horarios pico de actividad
     Concluye si conviene COMPRAR o VENDER hoy para obtener ganancias.
     Datos: {datos}
     """
@@ -55,6 +64,9 @@ def decision_inversion(symbol):
         return respuesta.text.lower()
     return "sin_decision"
 
+# ------------------------------------------------------------
+# FUNCIÓN: ejecutar operación
+# ------------------------------------------------------------
 def ejecutar_operacion(symbol="BTCUSDT", cantidad=0.001):
     decision = decision_inversion(symbol)
     if "comprar" in decision:
@@ -65,7 +77,6 @@ def ejecutar_operacion(symbol="BTCUSDT", cantidad=0.001):
             quantity=cantidad,
             recvWindow=60000
         )
-        registrar_operacion(symbol, "comprar", cantidad, float(orden["fills"][0]["price"]), float(orden["cummulativeQuoteQty"]))
         return f"✅ Compra ejecutada: {orden}"
     elif "vender" in decision:
         orden = client.create_order(
@@ -75,14 +86,25 @@ def ejecutar_operacion(symbol="BTCUSDT", cantidad=0.001):
             quantity=cantidad,
             recvWindow=60000
         )
-        registrar_operacion(symbol, "vender", cantidad, float(orden["fills"][0]["price"]), float(orden["cummulativeQuoteQty"]))
         return f"✅ Venta ejecutada: {orden}"
     else:
         return "⚠️ Sin acción recomendada por Gemini."
 
+# ------------------------------------------------------------
+# FUNCIÓN: ciclo diario
+# ------------------------------------------------------------
 def ciclo_diario():
+    print("🚀 Ciclo diario iniciado")
     resultados = []
-    for symbol in TOP_SYMBOLS:
-        resultado = ejecutar_operacion(symbol, cantidad=0.001)
-        resultados.append(resultado)
+    # Lista de criptos a analizar
+    simbolos = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "ADAUSDT", "XRPUSDT",
+                "SOLUSDT", "DOGEUSDT", "DOTUSDT", "MATICUSDT", "LTCUSDT"]
+
+    for symbol in simbolos:
+        try:
+            resultado = ejecutar_operacion(symbol, cantidad=0.001)
+            resultados.append({symbol: resultado})
+        except Exception as e:
+            resultados.append({symbol: f"❌ Error: {e}"})
+
     return resultados
