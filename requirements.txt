@@ -1,4 +1,11 @@
-python-binance
-google-genai
-pyTelegramBotAPI
+# --- Librerías principales ---
+pyTelegramBotAPI==4.33.0
+python-binance==1.0.36
+google-genai>=2.3.0
 
+# --- Dependencias comunes (fijadas para estabilidad) ---
+requests>=2.34.0
+aiohttp>=3.13.5
+cryptography>=48.0.0
+pydantic>=2.13.4
+dateparser>=1.4.0
