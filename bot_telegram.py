@@ -7,12 +7,14 @@
 #   - Comando /balance con CSV real
 #   - Ciclo automático diario con 10 criptos principales
 #   - Comando /id para obtener tu chat ID
+#   - Preguntas específicas (ej: nombre del bot) importadas de preguntas.py
 # ------------------------------------------------------------
 
 import os
 import telebot
 import threading
 import time
+from preguntas import es_pregunta
 from google import genai
 
 # --- IMPORTAMOS LA LÓGICA DE INVERSIÓN ---
@@ -81,15 +83,23 @@ def balance_handler(message):
 def send_id(message):
     bot.reply_to(message, f"Tu chat ID es: {message.chat.id}")
 
-# --- CHAT GENERAL (Gemini conversacional) ---
+# --- CHAT GENERAL (Gemini conversacional + preguntas específicas) ---
 @bot.message_handler(func=lambda message: True)
 def chat(message):
+    texto = message.text
+
+    # Primero chequeamos si es una pregunta de nombre
+    if es_pregunta(texto):
+        bot.reply_to(message, "Me llamo Ruk 🤖, EL bot inteligente de Gabriel.")
+        return
+
+    # Si no, seguimos con Gemini
     if client:
         try:
             # Primer intento con gemini-flash-lite-latest
             response = client.models.generate_content(
                 model="models/gemini-flash-lite-latest",
-                contents=message.text
+                contents=texto
             )
             bot.reply_to(message, response.text)
         except Exception as e:
@@ -98,7 +108,7 @@ def chat(message):
                 # Fallback automático a gemini-2.0-flash-lite
                 response = client.models.generate_content(
                     model="models/gemini-2.0-flash-lite",
-                    contents=message.text
+                    contents=texto
                 )
                 bot.reply_to(message, response.text)
             except Exception as e2:
