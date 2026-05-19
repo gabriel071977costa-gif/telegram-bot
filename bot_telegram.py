@@ -18,7 +18,7 @@ from preguntas import es_pregunta
 from google import genai
 
 # --- IMPORTAMOS LA LÓGICA DE INVERSIÓN ---
-# from bot_binance import ciclo_diario, ejecutar_operacion
+from bot_binance import ciclo_diario, ejecutar_operacion
 from balance_diario import balance_diario, calcular_balance, balance_hoy
 
 # --- BUSCADOR INTELIGENTE DE CLAVES ---
