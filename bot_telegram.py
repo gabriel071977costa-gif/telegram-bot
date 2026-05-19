@@ -1,11 +1,10 @@
 # bot_telegram.py
 # ------------------------------------------------------------
-# Bot de Telegram que controla todo con Gemini y Binance.
+# Bot de Telegram que controla todo con Gemini.
 # Incluye:
 #   - Lógica de claves y fallback de Gemini (tu versión estable)
-#   - Comando /invertir manual
 #   - Comando /balance con CSV real
-#   - Ciclo automático diario con 10 criptos principales
+#   - Ciclo automático diario (sin Binance en Render)
 #   - Comando /id para obtener tu chat ID
 #   - Preguntas específicas (ej: nombre del bot) importadas de preguntas.py
 # ------------------------------------------------------------
@@ -17,8 +16,7 @@ import time
 from preguntas import es_pregunta
 from google import genai
 
-# --- IMPORTAMOS LA LÓGICA DE INVERSIÓN ---
-# from bot_binance import ciclo_diario, ejecutar_operacion
+# --- IMPORTAMOS LA LÓGICA DE BALANCE ---
 from balance_diario import balance_diario, calcular_balance, balance_hoy
 
 # --- BUSCADOR INTELIGENTE DE CLAVES ---
@@ -54,7 +52,7 @@ if G_KEY:
 if TOKEN:
     bot = telebot.TeleBot(TOKEN)
 else:
-    print("❌ ERROR: No se encontró el TOKEN_BOT en Railway.")
+    print("❌ ERROR: No se encontró el TOKEN_BOT en Render.")
     exit(1)
 
 # --- CHAT_ID FIJO PARA CICLO AUTOMÁTICO ---
@@ -64,12 +62,6 @@ CHAT_ID = os.getenv("CHAT_ID") or "TU_CHAT_ID_AQUI"  # reemplazá con tu chat ID
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.reply_to(message, "¡Ruk activo! Ya reconozco tus claves y estoy listo para hablar, Gabriel.")
-
-# --- COMANDO /invertir manual ---
-@bot.message_handler(commands=['invertir'])
-def invertir_handler(message):
-    resultado = ejecutar_operacion("BTCUSDT", cantidad=0.001)
-    bot.reply_to(message, resultado)
 
 # --- COMANDO /balance ---
 @bot.message_handler(commands=['balance'])
@@ -91,7 +83,7 @@ def chat(message):
     # Primero chequeamos si es una pregunta de nombre
     if es_pregunta(texto):
         bot.reply_to(message, "Me llamo Ruk 🤖, EL bot inteligente de Gabriel.")
-        return
+        return  # IMPORTANTE: salir aquí para que no pase a Gemini
 
     # Si no, seguimos con Gemini
     if client:
@@ -120,8 +112,9 @@ def chat(message):
 # --- CICLO AUTOMÁTICO DIARIO ---
 def modo_automatico():
     while True:
-        resultados = ciclo_diario()
-        resumen = "\n".join([str(r) for r in resultados])
+        # 🚫 Binance deshabilitado en Render
+        # resultados = ciclo_diario()   # comentado porque Render no usa Binance
+        resumen = "Binance deshabilitado en Render"
         ganancia_hoy = balance_hoy()
 
         mensaje = f"⏱️ Resultados diarios:\n{resumen}\n📅 Ganancia del día: {ganancia_hoy:.2f} USDT"
