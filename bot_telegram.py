@@ -13,7 +13,7 @@ import os
 import telebot
 import threading
 import time
-from preguntas import es_pregunta
+from preguntas import es_preguntas
 from google import genai
 
 # --- IMPORTAMOS LA LÓGICA DE BALANCE ---
