@@ -6,6 +6,7 @@
 #   - Comando /invertir manual
 #   - Comando /balance con CSV real
 #   - Ciclo automático diario con 10 criptos principales
+#   - Comando /id para obtener tu chat ID
 # ------------------------------------------------------------
 
 import os
@@ -16,7 +17,7 @@ from google import genai
 
 # --- IMPORTAMOS LA LÓGICA DE INVERSIÓN ---
 from bot_binance import ciclo_diario, ejecutar_operacion
-from balance_diario import balance_diario, calcular_balance
+from balance_diario import balance_diario, calcular_balance, balance_hoy
 
 # --- BUSCADOR INTELIGENTE DE CLAVES ---
 def buscar_clave_gemini():
@@ -54,6 +55,9 @@ else:
     print("❌ ERROR: No se encontró el TOKEN_BOT en Railway.")
     exit(1)
 
+# --- CHAT_ID FIJO PARA CICLO AUTOMÁTICO ---
+CHAT_ID = os.getenv("CHAT_ID") or "TU_CHAT_ID_AQUI"  # reemplazá con tu chat ID real
+
 # --- COMANDO /start ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -69,29 +73,37 @@ def invertir_handler(message):
 @bot.message_handler(commands=['balance'])
 def balance_handler(message):
     ganancia_total = calcular_balance()
-    ganancia_hoy = balance_diario()
+    ganancia_hoy = balance_hoy()
     bot.reply_to(message, f"📊 Ganancia acumulada: {ganancia_total:.2f} USDT\n📅 Ganancia de hoy: {ganancia_hoy:.2f} USDT")
+
+# --- COMANDO /id ---
+@bot.message_handler(commands=['id'])
+def send_id(message):
+    bot.reply_to(message, f"Tu chat ID es: {message.chat.id}")
 
 # --- CHAT GENERAL (Gemini conversacional) ---
 @bot.message_handler(func=lambda message: True)
 def chat(message):
     if client:
         try:
+            # Primer intento con gemini-flash-lite-latest
             response = client.models.generate_content(
-                model="gemini-2.5-flash", 
+                model="models/gemini-flash-lite-latest",
                 contents=message.text
             )
             bot.reply_to(message, response.text)
         except Exception as e:
+            print(f"Error en Gemini (flash-lite-latest): {e}")
             try:
+                # Fallback automático a gemini-2.0-flash-lite
                 response = client.models.generate_content(
-                    model="gemini-2.0-flash", 
+                    model="models/gemini-2.0-flash-lite",
                     contents=message.text
                 )
                 bot.reply_to(message, response.text)
             except Exception as e2:
-                print(f"Error en Gemini: {e2}")
-                bot.reply_to(message, "Error de IA: revisa si tu clave de Google AI Studio está activa o si superaste el límite gratuito.")
+                print(f"Error en Gemini (2.0-flash-lite): {e2}")
+                bot.reply_to(message, "⚠️ Sin cuota disponible en Gemini. Revisá tu plan o billing en Google AI Studio.")
     else:
         bot.reply_to(message, "No tengo configurada la clave de Gemini (G_KEY es None).")
 
@@ -99,9 +111,16 @@ def chat(message):
 def modo_automatico():
     while True:
         resultados = ciclo_diario()
-        resumen = "\n".join(resultados)
-        ganancia_hoy = balance_diario()
-        bot.send_message(message.chat.id, f"⏱️ Resultados diarios:\n{resumen}\n📅 Ganancia del día: {ganancia_hoy:.2f} USDT")
+        resumen = "\n".join([str(r) for r in resultados])
+        ganancia_hoy = balance_hoy()
+
+        mensaje = f"⏱️ Resultados diarios:\n{resumen}\n📅 Ganancia del día: {ganancia_hoy:.2f} USDT"
+
+        # Si el mensaje es demasiado largo, lo partimos en bloques de 4000 caracteres
+        max_len = 4000
+        for i in range(0, len(mensaje), max_len):
+            bot.send_message(CHAT_ID, mensaje[i:i+max_len])
+
         time.sleep(86400)  # espera 1 día
 
 threading.Thread(target=modo_automatico, daemon=True).start()
