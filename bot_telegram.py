@@ -81,7 +81,7 @@ def chat(message):
     texto = message.text
 
     # Primero chequeamos si es una pregunta de nombre
-    if es_pregunta(texto):
+    if es_preguntas(texto):
         bot.reply_to(message, "Me llamo Ruk 🤖, EL bot inteligente de Gabriel.")
         return  # IMPORTANTE: salir aquí para que no pase a Gemini
 
