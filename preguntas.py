@@ -5,10 +5,13 @@ def es_preguntas(texto: str) -> bool:
     variantes = [
         "cómo te llamas",
         "como te llamas",
+        "Como te llamas",
         "tu nombre",
+        "Tu nombre",
         "tu nombre bot",
         "quién sos",
         "quien sos",
+        "Quien sos",
         "cómo te dicen",
         "como te dicen",
         "cuál es tu nombre",
