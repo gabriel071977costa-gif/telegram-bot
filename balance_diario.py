@@ -1,48 +1,74 @@
 # balance_diario.py
 # ------------------------------------------------------------
-# Registro de operaciones y cálculo de balance diario.
+# Registro y cálculo de balance diario del bot Ruk.
+# Guarda cada operación en un archivo CSV y calcula ganancias.
 # ------------------------------------------------------------
 
 import csv
 import os
-from datetime import datetime
+import datetime
 
-ARCHIVO_BALANCE = "balance_diario.csv"
+ARCHIVO = "operaciones.csv"
 
-# Inicializar archivo si no existe
-if not os.path.exists(ARCHIVO_BALANCE):
-    with open(ARCHIVO_BALANCE, mode="w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["fecha", "symbol", "accion", "cantidad", "precio", "total_usdt"])
-
-def registrar_operacion(symbol, accion, cantidad, precio, total_usdt):
+# ------------------------------------------------------------
+# FUNCIÓN: guardar operación
+# ------------------------------------------------------------
+def balance_diario(symbol, resultado, cantidad, precio):
     """Guarda una operación en el archivo CSV"""
-    with open(ARCHIVO_BALANCE, mode="a", newline="") as f:
+    existe = os.path.isfile(ARCHIVO)
+    with open(ARCHIVO, mode="a", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), symbol, accion, cantidad, precio, total_usdt])
+        if not existe:
+            writer.writerow(["fecha", "symbol", "accion", "cantidad", "precio"])
+        writer.writerow([
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            symbol,
+            resultado,
+            cantidad,
+            precio
+        ])
 
+# ------------------------------------------------------------
+# FUNCIÓN: calcular balance acumulado
+# ------------------------------------------------------------
 def calcular_balance():
     """Calcula ganancias/pérdidas acumuladas"""
-    total = 0.0
-    with open(ARCHIVO_BALANCE, mode="r") as f:
+    if not os.path.isfile(ARCHIVO):
+        return 0.0
+
+    balance = 0.0
+    with open(ARCHIVO, mode="r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            if row["accion"].lower() == "comprar":
-                total -= float(row["total_usdt"])
-            elif row["accion"].lower() == "vender":
-                total += float(row["total_usdt"])
-    return total
+            accion = row["accion"]
+            cantidad = float(row["cantidad"])
+            precio = float(row["precio"])
+            if "compra" in accion.lower():
+                balance -= cantidad * precio
+            elif "venta" in accion.lower():
+                balance += cantidad * precio
 
-def balance_diario():
+    return balance
+
+# ------------------------------------------------------------
+# FUNCIÓN: balance del día actual
+# ------------------------------------------------------------
+def balance_hoy():
     """Devuelve balance del día actual"""
-    hoy = datetime.now().strftime("%Y-%m-%d")
+    hoy = datetime.datetime.now().strftime("%Y-%m-%d")
     total = 0.0
-    with open(ARCHIVO_BALANCE, mode="r") as f:
+    if not os.path.isfile(ARCHIVO):
+        return total
+    with open(ARCHIVO, mode="r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             if row["fecha"].startswith(hoy):
-                if row["accion"].lower() == "comprar":
-                    total -= float(row["total_usdt"])
-                elif row["accion"].lower() == "vender":
-                    total += float(row["total_usdt"])
+                accion = row["accion"].lower()
+                cantidad = float(row["cantidad"])
+                precio = float(row["precio"])
+                if "compra" in accion:
+                    total -= cantidad * precio
+                elif "venta" in accion:
+                    total += cantidad * precio
     return total
+
