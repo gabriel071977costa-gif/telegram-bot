@@ -7,6 +7,7 @@
 #   - Ciclo automático diario (sin Binance en Render)
 #   - Comando /id para obtener tu chat ID
 #   - Preguntas específicas (ej: nombre del bot) importadas de preguntas.py
+#   - Webhook con Flask para Render (plan gratuito)
 # ------------------------------------------------------------
 
 import os
@@ -15,6 +16,7 @@ import threading
 import time
 from preguntas import es_preguntas
 from google import genai
+from flask import Flask, request   # <-- agregado para webhook
 
 # --- IMPORTAMOS LA LÓGICA DE BALANCE ---
 from balance_diario import balance_diario, calcular_balance, balance_hoy
@@ -61,19 +63,19 @@ CHAT_ID = os.getenv("CHAT_ID") or "TU_CHAT_ID_AQUI"  # reemplazá con tu chat ID
 # --- COMANDO /start ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "¡Ruk activo! Ya reconozco tus claves y estoy listo para hablar, Gabriel.")
+    bot.send_message(message.chat.id, "¡Ruk activo! Ya reconozco tus claves y estoy listo para hablar, Gabriel.")
 
 # --- COMANDO /balance ---
 @bot.message_handler(commands=['balance'])
 def balance_handler(message):
     ganancia_total = calcular_balance()
     ganancia_hoy = balance_hoy()
-    bot.reply_to(message, f"📊 Ganancia acumulada: {ganancia_total:.2f} USDT\n📅 Ganancia de hoy: {ganancia_hoy:.2f} USDT")
+    bot.send_message(message.chat.id, f"📊 Ganancia acumulada: {ganancia_total:.2f} USDT\n📅 Ganancia de hoy: {ganancia_hoy:.2f} USDT")
 
 # --- COMANDO /id ---
 @bot.message_handler(commands=['id'])
 def send_id(message):
-    bot.reply_to(message, f"Tu chat ID es: {message.chat.id}")
+    bot.send_message(message.chat.id, f"Tu chat ID es: {message.chat.id}")
 
 # --- CHAT GENERAL (Gemini conversacional + preguntas específicas) ---
 @bot.message_handler(func=lambda message: True)
@@ -82,7 +84,7 @@ def chat(message):
 
     # Primero chequeamos si es una pregunta de nombre
     if es_preguntas(texto):
-        bot.reply_to(message, "Me llamo Ruk 🤖, EL bot inteligente de Gabriel.")
+        bot.send_message(message.chat.id, "Me llamo Ruk 🤖, EL bot inteligente de Gabriel.")
         return  # IMPORTANTE: salir aquí para que no pase a Gemini
 
     # Si no, seguimos con Gemini
@@ -93,7 +95,7 @@ def chat(message):
                 model="models/gemini-flash-lite-latest",
                 contents=texto
             )
-            bot.reply_to(message, response.text)
+            bot.send_message(message.chat.id, response.text)
         except Exception as e:
             print(f"Error en Gemini (flash-lite-latest): {e}")
             try:
@@ -102,18 +104,16 @@ def chat(message):
                     model="models/gemini-2.0-flash-lite",
                     contents=texto
                 )
-                bot.reply_to(message, response.text)
+                bot.send_message(message.chat.id, response.text)
             except Exception as e2:
                 print(f"Error en Gemini (2.0-flash-lite): {e2}")
-                bot.reply_to(message, "⚠️ Sin cuota disponible en Gemini. Revisá tu plan o billing en Google AI Studio.")
+                bot.send_message(message.chat.id, "⚠️ Sin cuota disponible en Gemini. Revisá tu plan o billing en Google AI Studio.")
     else:
-        bot.reply_to(message, "No tengo configurada la clave de Gemini (G_KEY es None).")
+        bot.send_message(message.chat.id, "No tengo configurada la clave de Gemini (G_KEY es None).")
 
 # --- CICLO AUTOMÁTICO DIARIO ---
 def modo_automatico():
     while True:
-        # 🚫 Binance deshabilitado en Render
-        # resultados = ciclo_diario()   # comentado porque Render no usa Binance
         resumen = "Binance deshabilitado en Render"
         ganancia_hoy = balance_hoy()
 
@@ -128,13 +128,21 @@ def modo_automatico():
 
 threading.Thread(target=modo_automatico, daemon=True).start()
 
-# --- INICIO SEGURO DEL BOT ---
+# --- WEBHOOK CON FLASK ---
+app = Flask(__name__)
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
+    bot.process_new_updates([update])
+    return "OK", 200
+
 if __name__ == "__main__":
     try:
-        print("🚀 Limpiando conexión previa...")
+        print("🚀 Configurando webhook en Render...")
         bot.remove_webhook()
-        time.sleep(2)
-        print("🚀 Ruk iniciando polling... ¡Ya puedes escribirle!")
-        bot.polling(none_stop=True, interval=0, timeout=20)
+        # URL pública de tu servicio en Render, ej: https://telegram-bot.onrender.com/webhook
+        bot.set_webhook(url=os.getenv("WEBHOOK_URL"))
+        app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
     except Exception as e:
         print(f"❌ Error al arrancar el bot: {e}")
