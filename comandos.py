@@ -6,7 +6,7 @@
 
 import os
 import requests
-from baseDeDatosFinanzas import resumen_estadistico, ACTIVOS
+# from baseDeDatosFinanzas import resumen_estadistico, ACTIVOS
 from logicaYahooFinanzas import cargar_estado, resetear_dia_si_corresponde, guardar_estado
 
 TOKEN   = os.getenv("TOKEN_BOT")
