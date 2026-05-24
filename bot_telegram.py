@@ -8,6 +8,7 @@
 #   - Comando /id para obtener tu chat ID
 #   - Preguntas específicas (ej: nombre del bot) importadas de preguntas.py
 #   - Webhook con Flask para Render (plan gratuito)
+#   - Integración con comandos.py para manejar /agro, /ayuda, etc.
 # ------------------------------------------------------------
 
 import os
@@ -16,8 +17,8 @@ import threading
 import time
 from preguntas import es_preguntas
 from google import genai
-from comandos import procesar_comando
-from flask import Flask, request   # <-- agregado para webhook
+from comandos import procesar_comando   # <-- agregado
+from flask import Flask, request
 
 # --- IMPORTAMOS LA LÓGICA DE BALANCE ---
 from balance_diario import balance_diario, calcular_balance, balance_hoy
@@ -78,20 +79,24 @@ def balance_handler(message):
 def send_id(message):
     bot.send_message(message.chat.id, f"Tu chat ID es: {message.chat.id}")
 
-# --- CHAT GENERAL (Gemini conversacional + preguntas específicas) ---
+# --- CHAT GENERAL (Gemini conversacional + preguntas específicas + comandos) ---
 @bot.message_handler(func=lambda message: True)
 def chat(message):
     texto = message.text
 
-    # Primero chequeamos si es una pregunta de nombre
+    # 1. Si es un comando, lo procesamos en comandos.py
+    if texto.startswith("/"):
+        procesar_comando(texto, message.chat.id)   # <-- integración con comandos.py
+        return
+
+    # 2. Si es una pregunta de nombre
     if es_preguntas(texto):
         bot.send_message(message.chat.id, "Me llamo Ruk 🤖, EL bot inteligente de Gabriel.")
-        return  # IMPORTANTE: salir aquí para que no pase a Gemini
+        return
 
-    # Si no, seguimos con Gemini
+    # 3. Si no, seguimos con Gemini
     if client:
         try:
-            # Primer intento con gemini-flash-lite-latest
             response = client.models.generate_content(
                 model="models/gemini-flash-lite-latest",
                 contents=texto
@@ -100,7 +105,6 @@ def chat(message):
         except Exception as e:
             print(f"Error en Gemini (flash-lite-latest): {e}")
             try:
-                # Fallback automático a gemini-2.0-flash-lite
                 response = client.models.generate_content(
                     model="models/gemini-2.0-flash-lite",
                     contents=texto
@@ -120,7 +124,6 @@ def modo_automatico():
 
         mensaje = f"⏱️ Resultados diarios:\n{resumen}\n📅 Ganancia del día: {ganancia_hoy:.2f} USDT"
 
-        # Si el mensaje es demasiado largo, lo partimos en bloques de 4000 caracteres
         max_len = 4000
         for i in range(0, len(mensaje), max_len):
             bot.send_message(CHAT_ID, mensaje[i:i+max_len])
@@ -142,7 +145,6 @@ if __name__ == "__main__":
     try:
         print("🚀 Configurando webhook en Render...")
         bot.remove_webhook()
-        # URL pública de tu servicio en Render, ej: https://telegram-bot.onrender.com/webhook
         bot.set_webhook(url=os.getenv("WEBHOOK_URL"))
         app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
     except Exception as e:
