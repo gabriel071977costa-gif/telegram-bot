@@ -1,9 +1,5 @@
-# bot_yahooFinanzas.py
-# ------------------------------------------------------------
-# Módulo mínimo para exponer activos y resumen estadístico
-# ------------------------------------------------------------
+import yfinance as yf
 
-# Diccionario de activos
 ACTIVOS = {
     "YPF.BA": "YPF (Energía Argentina - Pesos)",
     "BTC-USD": "Bitcoin USD (Cripto)",
@@ -13,17 +9,28 @@ ACTIVOS = {
     "LEDE.BA": "Ledesma (Agro)"
 }
 
-# Función mínima para devolver datos de un activo
 def resumen_estadistico(symbol: str):
     """
-    Devuelve un resumen estadístico simulado para el activo.
-    En producción podés reemplazar con yfinance o tu lógica real.
+    Devuelve un resumen estadístico real desde Yahoo Finanzas:
+    último cierre y promedio de 2 años.
     """
     if symbol not in ACTIVOS:
         return None
 
-    # Datos simulados (ejemplo)
-    return {
-        "ultimo_cierre": 100.0,   # valor ficticio
-        "promedio_cierre": 95.0   # valor ficticio
-    }
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period="2y")
+
+        if hist.empty:
+            return None
+
+        ultimo_cierre = hist["Close"].iloc[-1]
+        promedio_cierre = hist["Close"].mean()
+
+        return {
+            "ultimo_cierre": round(float(ultimo_cierre), 2),
+            "promedio_cierre": round(float(promedio_cierre), 2)
+        }
+    except Exception as e:
+        print("Error en yfinance:", e)
+        return None
