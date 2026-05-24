@@ -10,3 +10,5 @@ aiohttp>=3.13.5
 cryptography>=48.0.0
 pydantic>=2.13.4
 dateparser>=1.4.0
+yfinance>=0.2.40
+
