@@ -46,12 +46,21 @@ def procesar_comando(texto):
     enviar_a_telegram(mensaje)
 
     elif texto == "/agro":
-        mensaje = "🌱 <b>AGRO — Señales y acumulado</b>\n"
-        for symbol in ["CRES.BA", "MOLA.BA", "LEDE.BA"]:
+    mensaje = "🌱 <b>AGRO — Señales y acumulado</b>\n"
+    for symbol in ["CRES.BA", "MOLA.BA", "LEDE.BA"]:
+        try:
             res = resumen_estadistico(symbol)
             if res:
-                mensaje += f"{symbol}: Último cierre ${res['ultimo_cierre']} | Promedio 2 años ${res['promedio_cierre']}\n"
-        enviar_a_telegram(mensaje)
+                mensaje += (
+                    f"{symbol}: Último cierre ${res['ultimo_cierre']} | "
+                    f"Promedio 2 años ${res['promedio_cierre']}\n"
+                )
+            else:
+                mensaje += f"{symbol}: No se pudieron obtener datos\n"
+        except Exception as e:
+            mensaje += f"{symbol}: Error al obtener datos ({e})\n"
+    enviar_a_telegram(mensaje)
+
 
     elif texto == "/balance":
         estado = cargar_estado()
