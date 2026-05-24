@@ -39,6 +39,12 @@ def procesar_comando(texto):
             "➕ Podés agregar más comandos según necesidad"
         )
 
+    elif texto == "/activos":
+    mensaje = "📡 <b>Lista de activos disponibles</b>\n"
+    for symbol, nombre in ACTIVOS.items():
+        mensaje += f"{symbol} → {nombre}\n"
+    enviar_a_telegram(mensaje)
+
     elif texto == "/agro":
         mensaje = "🌱 <b>AGRO — Señales y acumulado</b>\n"
         for symbol in ["CRES.BA", "MOLA.BA", "LEDE.BA"]:
