@@ -16,6 +16,7 @@ import threading
 import time
 from preguntas import es_preguntas
 from google import genai
+from comandos import procesar_comando
 from flask import Flask, request   # <-- agregado para webhook
 
 # --- IMPORTAMOS LA LÓGICA DE BALANCE ---
