@@ -30,6 +30,7 @@ def procesar_comando(texto):
     if texto == "/ayuda":
         enviar_a_telegram(
             "📖 <b>Comandos disponibles</b>\n"
+            "📡 /activos → Lista de activos disponibles\n"
             "📡 /agro → Señales y acumulado de Cresud, Molinos Agro y Ledesma\n"
             "📊 /balance → Estado actual del capital simulado\n"
             "⚙️ /reset → Reinicia el estado de simulación\n"
@@ -40,48 +41,69 @@ def procesar_comando(texto):
         )
 
     elif texto == "/activos":
-    mensaje = "📡 <b>Lista de activos disponibles</b>\n"
-    for symbol, nombre in ACTIVOS.items():
-        mensaje += f"{symbol} → {nombre}\n"
-    enviar_a_telegram(mensaje)
+        mensaje = "📡 <b>Lista de activos disponibles</b>\n"
+        for symbol, nombre in ACTIVOS.items():
+            mensaje += f"{symbol} → {nombre}\n"
+        enviar_a_telegram(mensaje)
 
     elif texto == "/agro":
-    mensaje = "🌱 <b>AGRO — Señales y acumulado</b>\n"
-    for symbol in ["CRES.BA", "MOLA.BA", "LEDE.BA"]:
-        try:
-            res = resumen_estadistico(symbol)
-            if res:
-                mensaje += (
-                    f"{symbol}: Último cierre ${res['ultimo_cierre']} | "
-                    f"Promedio 2 años ${res['promedio_cierre']}\n"
-                )
-            else:
-                mensaje += f"{symbol}: No se pudieron obtener datos\n"
-        except Exception as e:
-            mensaje += f"{symbol}: Error al obtener datos ({e})\n"
-    enviar_a_telegram(mensaje)
-
+        mensaje = "🌱 <b>AGRO — Señales y acumulado</b>\n"
+        for symbol in ["CRES.BA", "MOLA.BA", "LEDE.BA"]:
+            try:
+                res = resumen_estadistico(symbol)
+                if res:
+                    mensaje += (
+                        f"{symbol}: Último cierre ${res['ultimo_cierre']} | "
+                        f"Promedio 2 años ${res['promedio_cierre']}\n"
+                    )
+                else:
+                    mensaje += f"{symbol}: No se pudieron obtener datos\n"
+            except Exception as e:
+                mensaje += f"{symbol}: Error al obtener datos ({e})\n"
+        enviar_a_telegram(mensaje)
 
     elif texto == "/balance":
-        estado = cargar_estado()
-        estado = resetear_dia_si_corresponde(estado)
-        patrimonio = estado.get("patrimonio_total", 0)
-        enviar_a_telegram(f"📊 Balance actual: ${patrimonio:.2f} USD")
+        try:
+            estado = cargar_estado()
+            estado = resetear_dia_si_corresponde(estado)
+            patrimonio = estado.get("patrimonio_total", 0)
+            enviar_a_telegram(f"📊 Balance actual: ${patrimonio:.2f} USD")
+        except Exception as e:
+            enviar_a_telegram(f"📊 Error al obtener balance ({e})")
 
     elif texto == "/reset":
-        estado = {"capital_total": 1000.0, "operaciones": []}
-        guardar_estado(estado)
-        enviar_a_telegram("⚙️ Estado de simulación reiniciado a $1000 USD")
+        try:
+            estado = {"capital_total": 1000.0, "operaciones": []}
+            guardar_estado(estado)
+            enviar_a_telegram("⚙️ Estado de simulación reiniciado a $1000 USD")
+        except Exception as e:
+            enviar_a_telegram(f"⚙️ Error al reiniciar estado ({e})")
 
     elif texto == "/ypf":
-        res = resumen_estadistico("YPF.BA")
-        if res:
-            enviar_a_telegram(f"📡 YPF: Último cierre ${res['ultimo_cierre']} | Promedio 2 años ${res['promedio_cierre']}")
+        try:
+            res = resumen_estadistico("YPF.BA")
+            if res:
+                enviar_a_telegram(
+                    f"📡 YPF: Último cierre ${res['ultimo_cierre']} | "
+                    f"Promedio 2 años ${res['promedio_cierre']}"
+                )
+            else:
+                enviar_a_telegram("📡 YPF: No se pudieron obtener datos")
+        except Exception as e:
+            enviar_a_telegram(f"📡 YPF: Error al obtener datos ({e})")
 
     elif texto == "/btc":
-        res = resumen_estadistico("BTC-USD")
-        if res:
-            enviar_a_telegram(f"📡 Bitcoin: Último cierre ${res['ultimo_cierre']} | Promedio 2 años ${res['promedio_cierre']}")
+        try:
+            res = resumen_estadistico("BTC-USD")
+            if res:
+                enviar_a_telegram(
+                    f"📡 Bitcoin: Último cierre ${res['ultimo_cierre']} | "
+                    f"Promedio 2 años ${res['promedio_cierre']}"
+                )
+            else:
+                enviar_a_telegram("📡 Bitcoin: No se pudieron obtener datos")
+        except Exception as e:
+            enviar_a_telegram(f"📡 Bitcoin: Error al obtener datos ({e})")
 
     elif texto == "/ping":
         enviar_a_telegram("✅ Bot activo y conectado")
