@@ -121,5 +121,5 @@ else:
         mensaje += "\n📈 _Actualización automática por paneles._"
 
     # Enviar si hay algún dato cargado
-    if datos_lider or datos_general:
+    # if datos_lider or datos_general:
         enviar_telegram(mensaje)
