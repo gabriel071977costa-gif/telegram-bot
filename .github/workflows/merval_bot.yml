@@ -27,7 +27,7 @@ jobs:
 
       - name: Instalar dependencias
         run: |
-          pip install yfinance requests pytz
+          pip install yfinance requests pytz pandas
 
       - name: Ejecutar Script
         env:
