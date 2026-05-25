@@ -1,35 +1,29 @@
-name: Run Merval Bot Horarios Exactos
+name: Run Merval Bot
 
 on:
+  workflow_dispatch:   # lo podés lanzar manualmente
   schedule:
-    # 1. Alerta de apertura a las 10:50 AM Arg (13:50 UTC)
-    - cron: '50 13 * * 1-5'
-    
-    # 2. Primera alerta del mercado 11:05 AM Arg (14:05 UTC)
-    - cron: '5 14 * * 1-5'
-    
-    # 3. Alertas de las 12, 13, 14, 15, 16 y 17 hs Arg (15, 16, 17, 18, 19, 20 UTC)
-    - cron: '0 15,16,17,18,19,20 * * 1-5'
-    
-  workflow_dispatch: # Botón manual para pruebas
+    - cron: '50 13 * * 1-5'   # apertura 10:50 Arg
+    - cron: '5 14 * * 1-5'    # 11:05 Arg
+    - cron: '0 15,16,17,18,19,20 * * 1-5' # alertas horarias
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4   # actualizado
 
       - name: Configurar Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: Instalar dependencias
         run: |
           pip install yfinance requests pytz pandas
 
-      - name: Ejecutar Script
+      - name: Ejecutar Script Merval
         env:
           TOKEN_BOT: ${{ secrets.TOKEN_BOT }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
