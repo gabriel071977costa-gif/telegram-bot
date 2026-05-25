@@ -129,8 +129,9 @@ def modo_automatico():
             bot.send_message(CHAT_ID, mensaje[i:i+max_len])
 
         time.sleep(86400)  # espera 1 día
-
-threading.Thread(target=modo_automatico, daemon=True).start()
+        
+# --MANDA SMS A TELEGRAM---
+# threading.Thread(target=modo_automatico, daemon=True).start()
 
 # --- WEBHOOK CON FLASK ---
 app = Flask(__name__)
