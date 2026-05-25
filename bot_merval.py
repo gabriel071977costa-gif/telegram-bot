@@ -31,7 +31,7 @@ def enviar_telegram(mensaje):
     CHAT_ID = os.environ["CHAT_ID"]
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": mensaje, "parse_mode": "Markdown"}
-    r = requests.post(url, json=payload)
+    r = requests.post(url, data=payload)   # <-- cambio aquí
     print("DEBUG: Telegram status:", r.status_code, r.text)
 
 # --- FUNCIÓN PARA OBTENER VARIACIONES DE UN PANEL ---
