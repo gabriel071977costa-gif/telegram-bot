@@ -19,8 +19,8 @@ tickers = [
 ]
 
 def enviar_telegram(mensaje):
-    TOKEN = os.environ["TELEGRAM_TOKEN"]
-    CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
+    TOKEN = os.environ["TOKEN_BOT"]
+    CHAT_ID = os.environ["CHAT_ID"]
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": mensaje, "parse_mode": "Markdown"}
     requests.post(url, json=payload)
