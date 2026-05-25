@@ -121,5 +121,9 @@ else:
         mensaje += "\n📈 _Actualización automática por paneles._"
 
     # Enviar si hay algún dato cargado
-    # if datos_lider or datos_general:
-        enviar_telegram(mensaje)
+    if not datos_lider and not datos_general:
+        mensaje = "🔧 Prueba de conexión: hoy no hay datos porque es feriado, pero el bot está activo."
+           enviar_telegram(mensaje)
+    else:
+           enviar_telegram(mensaje)
+
