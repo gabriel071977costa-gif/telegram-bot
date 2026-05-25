@@ -12,10 +12,19 @@ minuto = hora_actual.minute
 
 # 2. Lista COMPLETA de todas las acciones del Panel Líder del Merval
 tickers = [
+    # --- PANEL LÍDER ---
     "ALUA.BA", "BBAR.BA", "BMA.BA", "BYMA.BA", "CEPU.BA", "COME.BA", 
     "EDN.BA", "GGAL.BA", "IRSA.BA", "LOMA.BA", "METR.BA", "MIRG.BA", 
     "PAMP.BA", "SUPV.BA", "TECO2.BA", "TGNO4.BA", "TGSU2.BA", "TRAN.BA", 
-    "TXAR.BA", "VALO.BA", "YPFD.BA"
+    "TXAR.BA", "VALO.BA", "YPFD.BA",
+    
+    # --- PANEL GENERAL (Más operadas) ---
+    "AGRO.BA", "AUSO.BA", "BHIP.BA", "BOLT.BA", "BPAT.BA", "CADO.BA", 
+    "CAPX.BA", "CARC.BA", "CECO2.BA", "CELU.BA", "CGPA2.BA", "COPH.BA", 
+    "CTIO.BA", "DGCU2.BA", "FERR.BA", "FIPL.BA", "GAMI.BA", "GCDI.BA", 
+    "GRIM.BA", "HAVA.BA", "INVJ.BA", "LEDE.BA", "LONG.BA", "MOLA.BA", 
+    "MOLI.BA", "MORI.BA", "OEST.BA", "PATA.BA", "RICH.BA", "RIGO.BA", 
+    "SAMI.BA", "SEMI.BA", "TGLT.BA", "YPFD.BA"
 ]
 
 def enviar_telegram(mensaje):
