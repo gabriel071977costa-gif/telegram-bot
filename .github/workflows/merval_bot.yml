@@ -7,6 +7,7 @@ on:
           - cron: '5 14 * * 1-5'    # 11:05 Arg
           - cron: '0 15,16,17,18,19,20,21 * * 1-5' # alertas horarias
           - cron: '35 22 * * 1-5'
+          - cron: '0 23 * * 1-5'
 
 jobs:
   run-bot:
