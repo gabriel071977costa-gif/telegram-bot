@@ -3,9 +3,9 @@ name: Run Merval Bot
 on:
   workflow_dispatch:   # lo podés lanzar manualmente
   schedule:
-    - cron: '50 13 * * 1-5'   # apertura 10:50 Arg
-    - cron: '5 14 * * 1-5'    # 11:05 Arg
-    - cron: '0 15,16,17,18,19,20 * * 1-5' # alertas horarias
+          - cron: '50 13 * * 1-5'   # apertura 10:50 Arg
+          - cron: '5 14 * * 1-5'    # 11:05 Arg
+          - cron: '0 15,16,17,18,19,20,21 * * 1-5' # alertas horarias
 
 jobs:
   run-bot:
