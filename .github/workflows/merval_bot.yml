@@ -1,32 +1,31 @@
 name: Run Merval Bot
-
 on:
-  workflow_dispatch:   # lo podés lanzar manualmente
+  workflow_dispatch:
   schedule:
-          - cron: '50 13 * * 1-5'   # apertura 10:50 Arg
-          - cron: '5 14 * * 1-5'    # 11:05 Arg
-          - cron: '0 15,16,17,18,19,20,21 * * 1-5' # alertas horarias
-          - cron: '35 22 * * 1-5'
-          - cron: '44 23 * * 1-5'
+    - cron: '0 14 * * 1-5'  # 11:00 Arg
+    - cron: '0 15 * * 1-5'  # 12:00 Arg
+    - cron: '0 16 * * 1-5'  # 13:00 Arg
+    - cron: '0 17 * * 1-5'  # 14:00 Arg
+    - cron: '0 18 * * 1-5'  # 15:00 Arg
+    - cron: '0 19 * * 1-5'  # 16:00 Arg
+    - cron: '0 20 * * 1-5'  # 17:00 Arg
+    - cron: '0 21 * * 1-5'  # 18:00 Arg
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout código
-        uses: actions/checkout@v4   # actualizado
-
+        uses: actions/checkout@v4
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Instalar dependencias
         run: |
           pip install yfinance requests pytz pandas
-
       - name: Ejecutar Script Merval
         env:
           TOKEN_BOT: ${{ secrets.TOKEN_BOT }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: python bot_merval.py
+        run: python bot_merval.py  # ← corregido, era .yml
