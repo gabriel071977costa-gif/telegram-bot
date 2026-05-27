@@ -4,13 +4,14 @@ import pytz
 import requests
 import yfinance as yf
 
-# 1. Configurar la hora de Argentina
+# --- CONFIGURACIÓN DE HORA ARGENTINA ---
 argentina_tz = pytz.timezone("America/Argentina/Buenos_Aires")
 hora_actual = datetime.now(argentina_tz)
 hora = hora_actual.hour
 minuto = hora_actual.minute
+print("DEBUG: Hora Argentina detectada:", hora, ":", minuto)
 
-# 2. Listas separadas de acciones
+# --- LISTAS DE ACCIONES ---
 panel_lider = [
     "ALUA.BA", "BBAR.BA", "BMA.BA", "BYMA.BA", "CEPU.BA", "COME.BA",
     "EDN.BA", "GGAL.BA", "IRSA.BA", "LOMA.BA", "METR.BA", "MIRG.BA",
@@ -26,15 +27,16 @@ panel_general = [
     "MORI.BA", "OEST.BA", "PATA.BA", "RICH.BA", "RIGO.BA", "SAMI.BA", "SEMI.BA"
 ]
 
+# --- FUNCIÓN DE ENVÍO A TELEGRAM ---
 def enviar_telegram(mensaje):
     TOKEN = os.environ["TOKEN_BOT"]
     CHAT_ID = os.environ["CHAT_ID"]
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": mensaje, "parse_mode": "Markdown"}
-    r = requests.post(url, data=payload)   # <-- cambio aquí
+    r = requests.post(url, data=payload)
     print("DEBUG: Telegram status:", r.status_code, r.text)
 
-# --- FUNCIÓN PARA OBTENER VARIACIONES DE UN PANEL ---
+# --- FUNCIÓN PARA PROCESAR PANEL ---
 def procesar_panel(lista_tickers):
     resultados = {}
     for ticker in lista_tickers:
@@ -59,16 +61,17 @@ def procesar_panel(lista_tickers):
             continue
     return resultados
 
-# CASO A: Mensaje de Apertura (10:50 AM)
-if hora == 10 and minuto >= 45:
+# --- BLOQUE DE APERTURA ---
+# ⚠️ Ahora más flexible: corre entre 10:45 y 10:55 AM hora Argentina.
+if hora == 10 and minuto >= 45 and minuto <= 55:
     noticia_texto = ""
     try:
         ggal = yf.Ticker("GGAL.BA")
         news = ggal.news
         if news:
             noticia_texto = f"📰 *Noticia destacada:* [{news[0]['title']}]({news[0]['link']})"
-    except Exception:
-        pass
+    except Exception as e:
+        print("DEBUG: Error obteniendo noticia:", e)
 
     mensaje_apertura = (
         "🔔 *¡BUENOS DÍAS! EL MERCADO ESTÁ POR ABRIR* 🔔\n\n"
@@ -80,7 +83,12 @@ if hora == 10 and minuto >= 45:
 
     enviar_telegram(mensaje_apertura)
 
-# CASO B: Alertas Horarias y Resumen Final (Dividido por Paneles)
+# --- BLOQUE DE PRUEBA FIJA A LAS 19:22 ---
+elif hora == 19 and minuto == 22:
+    mensaje_prueba = "🔧 Ping de prueba Merval Bot a las 19:22 AR.\nEl bot está activo y conectado."
+    enviar_telegram(mensaje_prueba)
+
+# --- BLOQUE DE ALERTAS HORARIAS / CIERRE ---
 else:
     datos_lider = procesar_panel(panel_lider)
     datos_general = procesar_panel(panel_general)
@@ -115,7 +123,7 @@ else:
     else:
         mensaje += "\n📈 _Actualización automática por paneles._"
 
-    # Si no hay datos (ej. feriado), mandar prueba de conexión
+    # ⚠️ Este bloque se usa solo si Yahoo Finance no devuelve datos (ej. feriado).
     if not datos_lider and not datos_general:
         mensaje = "🔧 Prueba de conexión Merval Bot (feriado). El bot está activo y conectado."
 
