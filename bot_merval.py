@@ -62,7 +62,6 @@ def procesar_panel(lista_tickers):
     return resultados
 
 # --- BLOQUE DE APERTURA ---
-# ⚠️ Ahora más flexible: corre entre 10:45 y 10:55 AM hora Argentina.
 if hora == 10 and minuto >= 45 and minuto <= 55:
     noticia_texto = ""
     try:
@@ -83,9 +82,9 @@ if hora == 10 and minuto >= 45 and minuto <= 55:
 
     enviar_telegram(mensaje_apertura)
 
-# --- BLOQUE DE PRUEBA FIJA A LAS 19:22 ---
-elif hora == 19 and minuto == 22:
-    mensaje_prueba = "🔧 Ping de prueba Merval Bot a las 19:22 AR.\nEl bot está activo y conectado."
+# --- BLOQUE DE PRUEBA FIJA A LAS 19:25 ---
+elif hora == 19 and minuto == 25:
+    mensaje_prueba = "🔧 Ping de prueba Merval Bot a las 19:25 AR.\nEl bot está activo y conectado."
     enviar_telegram(mensaje_prueba)
 
 # --- BLOQUE DE ALERTAS HORARIAS / CIERRE ---
@@ -123,7 +122,6 @@ else:
     else:
         mensaje += "\n📈 _Actualización automática por paneles._"
 
-    # ⚠️ Este bloque se usa solo si Yahoo Finance no devuelve datos (ej. feriado).
     if not datos_lider and not datos_general:
         mensaje = "🔧 Prueba de conexión Merval Bot (feriado). El bot está activo y conectado."
 
