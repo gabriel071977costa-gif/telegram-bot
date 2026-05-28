@@ -13,7 +13,8 @@ on:
     - cron: '0 19 * * 1-5'   # 16:00 AR
     - cron: '0 20 * * 1-5'   # 17:00 AR
     - cron: '0 21 * * 1-5'   # 18:00 AR
-
+    - cron: '35 0 * * 1-5'
+    
 jobs:
   run-bot:
     runs-on: ubuntu-latest
