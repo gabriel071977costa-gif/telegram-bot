@@ -13,18 +13,16 @@ print("DEBUG: Hora Argentina detectada:", hora, ":", minuto)
 
 # --- LISTAS DE ACCIONES ---
 panel_lider = [
-    "ALUA.BA", "BBAR.BA", "BMA.BA", "BYMA.BA", "CEPU.BA", "COME.BA",
-    "EDN.BA", "GGAL.BA", "IRSA.BA", "LOMA.BA", "METR.BA", "MIRG.BA",
-    "PAMP.BA", "SUPV.BA", "TECO2.BA", "TGNO4.BA", "TGSU2.BA", "TRAN.BA",
-    "TXAR.BA", "VALO.BA", "YPFD.BA"
+    "ALUA.BA","BBAR.BA","BMA.BA","BYMA.BA","CEPU.BA","COME.BA","EDN.BA","GGAL.BA",
+    "IRSA.BA","LOMA.BA","METR.BA","MIRG.BA","PAMP.BA","SUPV.BA","TECO2.BA","TGNO4.BA",
+    "TGSU2.BA","TRAN.BA","TXAR.BA","VALO.BA","YPFD.BA"
 ]
 
 panel_general = [
-    "AGRO.BA", "AUSO.BA", "BHIP.BA", "BOLT.BA", "BPAT.BA", "CADO.BA",
-    "CAPX.BA", "CARC.BA", "CECO2.BA", "CELU.BA", "CGPA2.BA", "CTIO.BA",
-    "DGCU2.BA", "FERR.BA", "FIPL.BA", "GAMI.BA", "GCDI.BA", "GRIM.BA",
-    "HAVA.BA", "INVJ.BA", "LEDE.BA", "LONG.BA", "MOLA.BA", "MOLI.BA",
-    "MORI.BA", "OEST.BA", "PATA.BA", "RICH.BA", "RIGO.BA", "SAMI.BA", "SEMI.BA"
+    "AGRO.BA","AUSO.BA","BHIP.BA","BOLT.BA","BPAT.BA","CADO.BA","CAPX.BA","CARC.BA",
+    "CECO2.BA","CELU.BA","CGPA2.BA","CTIO.BA","DGCU2.BA","FERR.BA","FIPL.BA","GAMI.BA",
+    "GCDI.BA","GRIM.BA","HAVA.BA","INVJ.BA","LEDE.BA","LONG.BA","MOLA.BA","MOLI.BA",
+    "MORI.BA","OEST.BA","PATA.BA","RICH.BA","RIGO.BA","SAMI.BA","SEMI.BA"
 ]
 
 # --- FUNCIÓN DE ENVÍO A TELEGRAM ---
@@ -43,26 +41,21 @@ def procesar_panel(lista_tickers):
         try:
             asset = yf.Ticker(ticker)
             hist = asset.history(period="2d")
-
             if hist.empty or len(hist) < 2:
                 continue
-
             precio_anterior = hist['Close'].iloc[-2]
             precio_actual = hist['Close'].iloc[-1]
-
             if precio_anterior == 0:
                 continue
-
             rendimiento = ((precio_actual - precio_anterior) / precio_anterior) * 100
             resultados[ticker.replace(".BA", "")] = rendimiento
-
         except Exception as e:
             print(f"DEBUG: Error procesando {ticker}: {e}")
             continue
     return resultados
 
-# --- BLOQUE DE APERTURA ---
-if hora == 10 and minuto >= 45 and minuto <= 55:
+# --- BLOQUE DE APERTURA (10:45–10:55 AR) ---
+if hora == 10 and 45 <= minuto <= 55:
     noticia_texto = ""
     try:
         ggal = yf.Ticker("GGAL.BA")
@@ -79,13 +72,7 @@ if hora == 10 and minuto >= 45 and minuto <= 55:
     )
     if noticia_texto:
         mensaje_apertura += noticia_texto + "\n"
-
     enviar_telegram(mensaje_apertura)
-
-# --- BLOQUE DE PRUEBA FIJA A LAS 19:25 ---
-elif hora == 21 and minuto == 35:
-    mensaje_prueba = "🔧 Ping de prueba Merval Bot a las 19:25 AR.\nEl bot está activo y conectado."
-    enviar_telegram(mensaje_prueba)
 
 # --- BLOQUE DE ALERTAS HORARIAS / CIERRE ---
 else:
