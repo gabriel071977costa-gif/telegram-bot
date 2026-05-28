@@ -83,7 +83,7 @@ if hora == 10 and minuto >= 45 and minuto <= 55:
     enviar_telegram(mensaje_apertura)
 
 # --- BLOQUE DE PRUEBA FIJA A LAS 19:25 ---
-elif hora == 19 and minuto == 25:
+elif hora == 21 and minuto == 35:
     mensaje_prueba = "🔧 Ping de prueba Merval Bot a las 19:25 AR.\nEl bot está activo y conectado."
     enviar_telegram(mensaje_prueba)
 
