@@ -32,6 +32,7 @@ def enviar_telegram(mensaje):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": mensaje, "parse_mode": "Markdown"}
     r = requests.post(url, data=payload)
+    print("DEBUG: Mensaje enviado desde bot_merval.py a Telegram")  # <-- agregado
     print("DEBUG: Telegram status:", r.status_code, r.text)
 
 # --- FUNCIÓN PARA PROCESAR PANEL ---
