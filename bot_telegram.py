@@ -4,7 +4,7 @@
 # Incluye:
 #   - Lógica de claves y fallback de Gemini (tu versión estable)
 #   - Comando /balance con CSV real
-#   - Ciclo automático diario (sin Binance en Render)
+#   - Ciclo automático diario (sin Binance en Render) [DESACTIVADO]
 #   - Comando /id para obtener tu chat ID
 #   - Preguntas específicas (ej: nombre del bot) importadas de preguntas.py
 #   - Webhook con Flask para Render (plan gratuito)
@@ -116,20 +116,15 @@ def chat(message):
     else:
         bot.send_message(message.chat.id, "No tengo configurada la clave de Gemini (G_KEY es None).")
 
-# --- CICLO AUTOMÁTICO DIARIO ---
-def modo_automatico():
-    while True:
-        resumen = "Binance deshabilitado en Render"
-        ganancia_hoy = balance_hoy()
-
-        mensaje = f"⏱️ Resultados diarios:\n{resumen}\n📅 Ganancia del día: {ganancia_hoy:.2f} USDT"
-
-        max_len = 4000
-        for i in range(0, len(mensaje), max_len):
-            bot.send_message(CHAT_ID, mensaje[i:i+max_len])
-
-        time.sleep(86400)  # espera 1 día
-        
+# --- CICLO AUTOMÁTICO DIARIO (DESACTIVADO) ---
+# def modo_automatico():
+#     while True:
+#         resumen = "Binance deshabilitado en Render"
+#         ganancia_hoy = balance_hoy()
+#         mensaje = f"⏱️ Resultados diarios:\n{resumen}\n📅 Ganancia del día: {ganancia_hoy:.2f} USDT"
+#         bot.send_message(CHAT_ID, mensaje)
+#         time.sleep(86400)
+#
 # --MANDA SMS A TELEGRAM---
 # threading.Thread(target=modo_automatico, daemon=True).start()
 
@@ -150,3 +145,4 @@ if __name__ == "__main__":
         app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
     except Exception as e:
         print(f"❌ Error al arrancar el bot: {e}")
+
