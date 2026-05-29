@@ -133,6 +133,7 @@ app = Flask(__name__)
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
+    print("DEBUG: Mensaje recibido por bot_telegram.py vía webhook")  # <-- agregado
     update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
     bot.process_new_updates([update])
     return "OK", 200
@@ -145,4 +146,3 @@ if __name__ == "__main__":
         app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
     except Exception as e:
         print(f"❌ Error al arrancar el bot: {e}")
-
