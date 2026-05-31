@@ -55,62 +55,41 @@ def procesar_panel(lista_tickers):
             continue
     return resultados
 
-# --- BLOQUE DE APERTURA (10:45–10:55 AR) ---
-if hora == 10 and 45 <= minuto <= 55:
-    noticia_texto = ""
-    try:
-        ggal = yf.Ticker("GGAL.BA")
-        news = ggal.news
-        if news:
-            noticia_texto = f"📰 *Noticia destacada:* [{news[0]['title']}]({news[0]['link']})"
-    except Exception as e:
-        print("DEBUG: Error obteniendo noticia:", e)
+# --- BLOQUE DE EJECUCIÓN (siempre que GitHub Actions dispare) ---
+datos_lider = procesar_panel(panel_lider)
+datos_general = procesar_panel(panel_general)
 
-    mensaje_apertura = (
-        "🔔 *¡BUENOS DÍAS! EL MERCADO ESTÁ POR ABRIR* 🔔\n\n"
-        "🚀 Prepará tus pantallas. En 10 minutos arranca la rueda del Merval.\n"
-        "👀 Agendate las alertas horarias para no perderte ninguna oportunidad hoy.\n\n"
-    )
-    if noticia_texto:
-        mensaje_apertura += noticia_texto + "\n"
-    enviar_telegram(mensaje_apertura)
-
-# --- BLOQUE DE ALERTAS HORARIAS / CIERRE ---
+if hora == 17:
+    mensaje = "🏁 *CIERRE DE MERCADO | Resumen Final del Día* 🏁\n\n"
 else:
-    datos_lider = procesar_panel(panel_lider)
-    datos_general = procesar_panel(panel_general)
+    mensaje = f"📊 *Merval | Top Subas ({hora}:{minuto:02d} hs)*\n\n"
 
-    if hora == 17:
-        mensaje = "🏁 *CIERRE DE MERCADO | Resumen Final del Día* 🏁\n\n"
-    else:
-        mensaje = f"📊 *Merval | Top Subas ({hora}:{minuto:02d} hs)*\n\n"
+mensaje += "💎 *PANEL LÍDER (Top 3):*\n"
+if datos_lider:
+    top_lider = sorted(datos_lider.items(), key=lambda x: x[1], reverse=True)[:3]
+    for i, (ticker, var) in enumerate(top_lider, 1):
+        emoji = "🟢" if var >= 0 else "🔴"
+        signo = "+" if var >= 0 else ""
+        mensaje += f"{i}. *{ticker}* {emoji} {signo}{var:.2f}%\n"
+else:
+    mensaje += "Sin datos disponibles.\n"
 
-    mensaje += "💎 *PANEL LÍDER (Top 3):*\n"
-    if datos_lider:
-        top_lider = sorted(datos_lider.items(), key=lambda x: x[1], reverse=True)[:3]
-        for i, (ticker, var) in enumerate(top_lider, 1):
-            emoji = "🟢" if var >= 0 else "🔴"
-            signo = "+" if var >= 0 else ""
-            mensaje += f"{i}. *{ticker}* {emoji} {signo}{var:.2f}%\n"
-    else:
-        mensaje += "Sin datos disponibles.\n"
+mensaje += "\n🏭 *PANEL GENERAL (Top 3):*\n"
+if datos_general:
+    top_general = sorted(datos_general.items(), key=lambda x: x[1], reverse=True)[:3]
+    for i, (ticker, var) in enumerate(top_general, 1):
+        emoji = "🟢" if var >= 0 else "🔴"
+        signo = "+" if var >= 0 else ""
+        mensaje += f"{i}. *{ticker}* {emoji} {signo}{var:.2f}%\n"
+else:
+    mensaje += "Sin datos disponibles.\n"
 
-    mensaje += "\n🏭 *PANEL GENERAL (Top 3):*\n"
-    if datos_general:
-        top_general = sorted(datos_general.items(), key=lambda x: x[1], reverse=True)[:3]
-        for i, (ticker, var) in enumerate(top_general, 1):
-            emoji = "🟢" if var >= 0 else "🔴"
-            signo = "+" if var >= 0 else ""
-            mensaje += f"{i}. *{ticker}* {emoji} {signo}{var:.2f}%\n"
-    else:
-        mensaje += "Sin datos disponibles.\n"
+if hora == 17:
+    mensaje += "\n👏 ¡Fin de la jornada financiera! Mañana volvemos."
+else:
+    mensaje += "\n📈 _Actualización automática por paneles._"
 
-    if hora == 17:
-        mensaje += "\n👏 ¡Fin de la jornada financiera! Mañana volvemos."
-    else:
-        mensaje += "\n📈 _Actualización automática por paneles._"
+if not datos_lider and not datos_general:
+    mensaje = "🔧 Prueba de conexión Merval Bot (feriado). El bot está activo y conectado."
 
-    if not datos_lider and not datos_general:
-        mensaje = "🔧 Prueba de conexión Merval Bot (feriado). El bot está activo y conectado."
-
-    enviar_telegram(mensaje)
+enviar_telegram(mensaje)
