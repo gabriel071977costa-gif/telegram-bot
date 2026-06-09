@@ -64,6 +64,7 @@ if hora == 17:
 else:
     mensaje = f"📊 *Merval | Top Subas ({hora}:{minuto:02d} hs)*\n\n"
 
+mensaje += "💎 *BOT MERVAL :*\n"
 mensaje += "💎 *PANEL LÍDER (Top 3):*\n"
 if datos_lider:
     top_lider = sorted(datos_lider.items(), key=lambda x: x[1], reverse=True)[:3]
