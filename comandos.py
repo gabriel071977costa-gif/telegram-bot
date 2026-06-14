@@ -240,7 +240,8 @@ def procesar_comando(texto, chat_id):
 
       elif comando_base == "/invertir":
            ejecutar_inversion(argumento, chat_id)
-    
+      elif comando_base == "/buscar":
+           ejecutar_busqueda(argumento, chat_id)    
     # --------------------------------------------------------
     # /reset → NO lo hacemos desde bt porque requeriría
     # escribir en el repo de bY, lo cual es peligroso.
