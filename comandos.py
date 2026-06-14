@@ -9,6 +9,8 @@ import json
 import base64
 import requests
 
+
+from analizar import ejecutar_analisis
 from invertir import ejecutar_inversion
 # ------------------------------------------------------------
 # CONFIGURACIÓN
