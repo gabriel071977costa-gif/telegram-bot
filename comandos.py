@@ -82,11 +82,12 @@ def procesar_comando(texto, chat_id):
             "📈 /historial → Últimas 5 operaciones realizadas\n"
             "🌱 /agro → Resumen de activos agro\n"
             "📡 /activos → Lista de activos que opera el bot\n"
-            "🔍 /ypf → Info de YPF\n"
+            "🔍 /ypf → Info de YPFD\n"
             "🔍 /btc → Info de Bitcoin\n"
             "⚙️ /ping → Verificar que Ruk está activo\n"
             "🔍 /analizar [activo] → Analiza si conviene comprar o vender\n"
             "🚀 /invertir [activo] → Envía la orden de compra real a GitHub\n"
+            "🔍 /buscar [nombre] → Busca el código exacto de una empresa\n"
         )
 
     # --------------------------------------------------------
