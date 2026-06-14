@@ -84,6 +84,8 @@ def procesar_comando(texto, chat_id):
             "🔍 /ypf → Info de YPF\n"
             "🔍 /btc → Info de Bitcoin\n"
             "⚙️ /ping → Verificar que Ruk está activo\n"
+            "🔍 /analizar [activo] → Analiza si conviene comprar o vender\n"
+            "🚀 /invertir [activo] → Envía la orden de compra real a GitHub\n"
         )
 
     # --------------------------------------------------------
