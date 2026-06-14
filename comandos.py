@@ -9,6 +9,7 @@ import json
 import base64
 import requests
 
+from invertir import ejecutar_inversion
 # ------------------------------------------------------------
 # CONFIGURACIÓN
 # Estas variables vienen de Render → Environment
@@ -192,7 +193,7 @@ def procesar_comando(texto, chat_id):
     # /ypf y /btc → info rápida desde cache
     # --------------------------------------------------------
     elif texto in ["/ypf", "/btc"]:
-        symbol = "YPF.BA" if texto == "/ypf" else "BTC-USD"
+        symbol = "YPFD.BA" if texto == "/ypf" else "BTC-USD"
         cache  = leer_json_github("cache_finanzas.json")
         if not cache:
             enviar_a_telegram(chat_id, "❌ No pude leer el cache desde GitHub.")
@@ -229,7 +230,9 @@ def procesar_comando(texto, chat_id):
             f"🏦 Capital inicial: ${cap_ini:.2f}\n"
             f"{emoji} Ganancia/Pérdida: <b>${ganancia:+.2f}</b>"
         )
-
+      elif comando_base == "/invertir":
+    ejecutar_inversion(argumento, chat_id)
+    
     # --------------------------------------------------------
     # /reset → NO lo hacemos desde bt porque requeriría
     # escribir en el repo de bY, lo cual es peligroso.
