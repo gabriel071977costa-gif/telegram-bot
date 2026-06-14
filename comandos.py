@@ -9,10 +9,10 @@ import json
 import base64
 import requests
 
-
 from analizar import ejecutar_analisis
 from invertir import ejecutar_inversion
 from buscar import ejecutar_busqueda
+
 # ------------------------------------------------------------
 # CONFIGURACIÓN
 # Estas variables vienen de Render → Environment
@@ -70,7 +70,15 @@ def leer_json_github(nombre_archivo):
 # Llamada desde bot_telegram.py con el texto y el chat_id
 # ------------------------------------------------------------
 def procesar_comando(texto, chat_id):
-    texto = texto.strip().lower()
+    texto_limpio = texto.strip()
+    
+    # Separamos el comando del argumento (ej: /analizar ggal -> comando_base="/analizar", argumento="ggal")
+    partes = texto_limpio.split(maxsplit=1)
+    comando_base = partes[0].lower() if partes else ""
+    argumento = partes[1].lower() if len(partes) > 1 else ""
+
+    # Usamos texto en minúsculas para los comandos puros sin argumentos
+    texto = texto_limpio.lower()
 
     # --------------------------------------------------------
     # /ayuda → lista de comandos disponibles
@@ -89,7 +97,6 @@ def procesar_comando(texto, chat_id):
             "⚙️ /ping → Verificar que Ruk está activo\n"
             "🔍 /ypf → Info de YPF\n"
         )
-        
 
     # --------------------------------------------------------
     # /estado → lee estado_simulacion.json desde GitHub
@@ -110,9 +117,9 @@ def procesar_comando(texto, chat_id):
         if posiciones:
             lineas_pos = []
             for symbol, pos in posiciones.items():
-                entrada  = pos.get("precio_entrada", 0)
+                entrada   = pos.get("precio_entrada", 0)
                 inversion = pos.get("inversion_usd", 0)
-                fecha    = pos.get("fecha_entrada", "?")
+                fecha     = pos.get("fecha_entrada", "?")
                 lineas_pos.append(
                     f"  • <b>{symbol}</b>\n"
                     f"    Entrada: ${entrada:.4f} | Invertido: ${inversion:.2f}\n"
@@ -126,146 +133,4 @@ def procesar_comando(texto, chat_id):
         enviar_a_telegram(chat_id,
             f"📊 <b>ESTADO DE SIMULACIÓN</b>\n"
             f"──────────────────────\n"
-            f"💰 Capital disponible: <b>${capital:.2f}</b>\n"
-            f"{emoji} Ganancia/Pérdida: <b>${ganancia:+.2f}</b>\n"
-            f"📂 Posiciones abiertas:\n{bloque_pos}\n"
-            f"──────────────────────\n"
-            f"🕐 Última actualización: {ultima_act}"
-        )
-
-    # --------------------------------------------------------
-    # /historial → últimas 5 operaciones del historial
-    # --------------------------------------------------------
-    elif texto == "/historial":
-        estado = leer_json_github("estado_simulacion.json")
-        if not estado:
-            enviar_a_telegram(chat_id, "❌ No pude leer el historial desde GitHub.")
-            return
-
-        historial = estado.get("historial", [])
-        if not historial:
-            enviar_a_telegram(chat_id, "📋 Sin operaciones registradas todavía.")
-            return
-
-        ultimas = historial[-5:][::-1]  # últimas 5, más reciente primero
-        lineas  = ["📋 <b>ÚLTIMAS OPERACIONES</b>\n"]
-        for op in ultimas:
-            tipo = op.get("tipo", "?")
-            sym  = op.get("symbol", "?")
-            hora = op.get("hora", "?")
-            if tipo == "COMPRA":
-                precio    = op.get("precio", 0)
-                inversion = op.get("inversion_usd", 0)
-                lineas.append(f"🟢 <b>COMPRA</b> {sym} @ ${precio:.4f} | ${inversion:.2f} | {hora}")
-            elif tipo == "VENTA":
-                ganancia = op.get("ganancia_usd", 0)
-                pct      = op.get("ganancia_pct", 0)
-                motivo   = op.get("motivo", "señal")
-                emoji    = "📈" if ganancia >= 0 else "📉"
-                lineas.append(f"🔴 <b>VENTA</b> {sym} {emoji} ${ganancia:+.2f} ({pct:+.2f}%) | {motivo} | {hora}")
-
-        enviar_a_telegram(chat_id, "\n".join(lineas))
-
-    # --------------------------------------------------------
-    # /agro → resumen de activos agro desde cache
-    # --------------------------------------------------------
-    elif texto == "/agro":
-        cache = leer_json_github("cache_finanzas.json")
-        if not cache:
-            enviar_a_telegram(chat_id, "❌ No pude leer el cache desde GitHub.")
-            return
-
-        msg = "🌱 <b>ACTIVOS AGRO</b>\n──────────────────────\n"
-        for symbol in ["CRES.BA", "MOLA.BA", "LEDE.BA"]:
-            datos = cache.get(symbol, [])
-            if datos:
-                ultimo = datos[-1]["cierre"]
-                cierres = [d["cierre"] for d in datos if d["cierre"] > 0]
-                promedio = round(sum(cierres) / len(cierres), 2)
-                msg += f"<b>{symbol}</b>: ${ultimo} | Promedio 2a: ${promedio}\n"
-            else:
-                msg += f"<b>{symbol}</b>: Sin datos\n"
-        enviar_a_telegram(chat_id, msg)
-
-    # --------------------------------------------------------
-    # /activos → lista de activos
-    # --------------------------------------------------------
-    elif texto == "/activos":
-        msg = "📡 <b>Activos que opera el bot</b>\n"
-        for symbol, nombre in ACTIVOS.items():
-            msg += f"  • {symbol} → {nombre}\n"
-        enviar_a_telegram(chat_id, msg)
-
-    # --------------------------------------------------------
-    # /ypf y /btc → info rápida desde cache
-    # --------------------------------------------------------
-    elif texto in ["/ypf", "/btc"]:
-        symbol = "YPFD.BA" if texto == "/ypf" else "BTC-USD"
-        cache  = leer_json_github("cache_finanzas.json")
-        if not cache:
-            enviar_a_telegram(chat_id, "❌ No pude leer el cache desde GitHub.")
-            return
-        datos = cache.get(symbol, [])
-        if datos:
-            ultimo   = datos[-1]["cierre"]
-            cierres  = [d["cierre"] for d in datos if d["cierre"] > 0]
-            promedio = round(sum(cierres) / len(cierres), 2)
-            nombre   = ACTIVOS.get(symbol, symbol)
-            enviar_a_telegram(chat_id,
-                f"📡 <b>{nombre}</b>\n"
-                f"Último cierre: <b>${ultimo}</b>\n"
-                f"Promedio 2 años: ${promedio}"
-            )
-        else:
-            enviar_a_telegram(chat_id, f"❌ Sin datos para {symbol}")
-
-    # --------------------------------------------------------
-    # /balance → capital disponible y ganancia total
-    # --------------------------------------------------------
-    elif texto == "/balance":
-        estado = leer_json_github("estado_simulacion.json")
-        if not estado:
-            enviar_a_telegram(chat_id, "❌ No pude leer el balance desde GitHub.")
-            return
-        capital  = estado.get("capital_usd", 0)
-        cap_ini  = estado.get("capital_inicial", 1000)
-        ganancia = round(capital - cap_ini, 2)
-        emoji    = "🟢" if ganancia >= 0 else "🔴"
-        enviar_a_telegram(chat_id,
-            f"📊 <b>BALANCE SIMULADO</b>\n"
-            f"💰 Capital disponible: <b>${capital:.2f}</b>\n"
-            f"🏦 Capital inicial: ${cap_ini:.2f}\n"
-            f"{emoji} Ganancia/Pérdida: <b>${ganancia:+.2f}</b>"
-        )
-      elif comando_base == "/analizar":
-           ejecutar_analisis(argumento, chat_id)
-
-      elif comando_base == "/invertir":
-           ejecutar_inversion(argumento, chat_id)
-      elif comando_base == "/buscar":
-           ejecutar_busqueda(argumento, chat_id)    
-    # --------------------------------------------------------
-    # /reset → NO lo hacemos desde bt porque requeriría
-    # escribir en el repo de bY, lo cual es peligroso.
-    # Informamos que se hace desde GitHub Actions.
-    # --------------------------------------------------------
-    elif texto == "/reset":
-        enviar_a_telegram(chat_id,
-            "⚙️ <b>Reset no disponible desde Telegram</b>\n\n"
-            "Para reiniciar la simulación, borrá manualmente "
-            "<code>estado_simulacion.json</code> desde el repo "
-            "<b>bot-yahooFinanzas</b> en GitHub.\n"
-            "En el próximo ciclo bY creará uno nuevo con $1000."
-        )
-
-    # --------------------------------------------------------
-    # /ping → verificar que bt está activo
-    # --------------------------------------------------------
-    elif texto == "/ping":
-        enviar_a_telegram(chat_id, "✅ Ruk activo y conectado 🤖")
-
-    # --------------------------------------------------------
-    # Comando desconocido
-    # --------------------------------------------------------
-    else:
-        enviar_a_telegram(chat_id, "❓ Comando no reconocido. Usá /ayuda para ver la lista.")
+            f"💰 Capital disponible: <b>${capital:.2f}
