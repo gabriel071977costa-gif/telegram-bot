@@ -12,6 +12,7 @@ import requests
 
 from analizar import ejecutar_analisis
 from invertir import ejecutar_inversion
+from buscar import ejecutar_busqueda
 # ------------------------------------------------------------
 # CONFIGURACIÓN
 # Estas variables vienen de Render → Environment
