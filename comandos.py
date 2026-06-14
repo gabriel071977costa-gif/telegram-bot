@@ -133,4 +133,4 @@ def procesar_comando(texto, chat_id):
         enviar_a_telegram(chat_id,
             f"📊 <b>ESTADO DE SIMULACIÓN</b>\n"
             f"──────────────────────\n"
-            f"💰 Capital disponible: <b>${capital:.2f}
+            f"💰 Capital disponible: <b>${capital:.2f}"
