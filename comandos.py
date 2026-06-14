@@ -78,17 +78,18 @@ def procesar_comando(texto, chat_id):
     if texto == "/ayuda":
         enviar_a_telegram(chat_id,
             "📖 <b>Comandos disponibles</b>\n\n"
+            "📡 /activos → Lista de activos que opera el bot\n"
+            "🌱 /agro → Resumen de activos agro\n"
+            "📊 /analizar [activo] → Analiza si conviene comprar o vender\n"
+            "🔍 /btc → Info de Bitcoin\n"
+            "🔍 /buscar [nombre] → Busca el código exacto de una empresa\n"
             "📊 /estado → Posiciones abiertas y capital actual\n"
             "📈 /historial → Últimas 5 operaciones realizadas\n"
-            "🌱 /agro → Resumen de activos agro\n"
-            "📡 /activos → Lista de activos que opera el bot\n"
-            "🔍 /ypf → Info de YPFD\n"
-            "🔍 /btc → Info de Bitcoin\n"
-            "⚙️ /ping → Verificar que Ruk está activo\n"
-            "🔍 /analizar [activo] → Analiza si conviene comprar o vender\n"
             "🚀 /invertir [activo] → Envía la orden de compra real a GitHub\n"
-            "🔍 /buscar [nombre] → Busca el código exacto de una empresa\n"
+            "⚙️ /ping → Verificar que Ruk está activo\n"
+            "🔍 /ypf → Info de YPF\n"
         )
+        
 
     # --------------------------------------------------------
     # /estado → lee estado_simulacion.json desde GitHub
