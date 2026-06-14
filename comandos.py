@@ -232,8 +232,11 @@ def procesar_comando(texto, chat_id):
             f"🏦 Capital inicial: ${cap_ini:.2f}\n"
             f"{emoji} Ganancia/Pérdida: <b>${ganancia:+.2f}</b>"
         )
+      elif comando_base == "/analizar":
+           ejecutar_analisis(argumento, chat_id)
+
       elif comando_base == "/invertir":
-    ejecutar_inversion(argumento, chat_id)
+           ejecutar_inversion(argumento, chat_id)
     
     # --------------------------------------------------------
     # /reset → NO lo hacemos desde bt porque requeriría
