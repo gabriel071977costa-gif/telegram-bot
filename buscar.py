@@ -3,11 +3,9 @@ import requests
 
 TOKEN = os.getenv("TOKEN_BOT")
 
-# BASE DE DATOS COMPLETA E INDEPENDIENTE POR SECTORES E INDUSTRIAS
+# BASE DE DATOS COMPLETA: MERVAL, CRIPTOS E INTERNACIONALES POR SECTOR
 UNIVERSO_ACTIVOS = {
-    # =========================================================================
     # --- PANEL LÍDER MERVAL (ARGENTINA) ---
-    # =========================================================================
     "ALUA.BA":  {"desc": "Aluar", "tags": "aluminio metalurgia industria materiales merval"},
     "BBAR.BA":  {"desc": "Banco BBVA Argentina", "tags": "banco finanzas bancario merval bba"},
     "BMA.BA":   {"desc": "Banco Macro", "tags": "banco finanzas bancario merval macro"},
@@ -30,9 +28,7 @@ UNIVERSO_ACTIVOS = {
     "VALO.BA":  {"desc": "Banco de Valores", "tags": "banco finanzas merval"},
     "YPFD.BA":  {"desc": "YPF Clase D", "tags": "petroleo gas energia combustibles merval ypf"},
     
-    # =========================================================================
-    # --- CRIPTOMONEDAS (GANANCIAS DIARIAS / VOLATILIDAD) ---
-    # =========================================================================
+    # --- CRIPTOMONEDAS VOLÁTILES (DIARIAS) ---
     "BTC-USD":  {"desc": "Bitcoin USD", "tags": "cripto criptomoneda bitcoin btc volatilidad diaria"},
     "ETH-USD":  {"desc": "Ethereum USD", "tags": "cripto criptomoneda ethereum eth volatilidad contratos"},
     "BNB-USD":  {"desc": "Binance Coin USD", "tags": "cripto criptomoneda binance bnb utilidad"},
@@ -44,44 +40,35 @@ UNIVERSO_ACTIVOS = {
     "LINK-USD": {"desc": "Chainlink USD", "tags": "cripto criptomoneda chainlink link oraculo"},
     "DOGE-USD": {"desc": "Dogecoin USD", "tags": "cripto criptomoneda dogecoin doge memecoin volatilidad diaria"},
     
-    # =========================================================================
+    # --- CRIPTOMONEDAS ESTABLES (VALEN 1 DÓLAR) ---
+    "USDT-USD": {"desc": "Tether USD (USDT)", "tags": "cripto criptomoneda stablecoin estable dolar usdt fiat digital"},
+    "USDC-USD": {"desc": "USD Coin (USDC)", "tags": "cripto criptomoneda stablecoin estable dolar usdc coinbase circle"},
+    "DAI-USD":  {"desc": "Dai (DAI)", "tags": "cripto criptomoneda stablecoin estable dolar dai descentralizada maker"},
+
     # --- SECTOR AGRO ---
-    # =========================================================================
     "CRES.BA":  {"desc": "Cresud", "tags": "agro agropecuario campo propiedades cresud"},
     "MOLA.BA":  {"desc": "Molinos Agro", "tags": "agro alimentos oleaginoso exportacion molinos"},
     "LEDE.BA":  {"desc": "Ledesma", "tags": "agro azucar papel economia ledesma"},
 
-    # =========================================================================
-    # --- MERCADO INTERNACIONAL (CEDEARS Y GIGANTES GLOBALES) ---
-    # =========================================================================
-    
-    # MINERALES, MINERÍA Y MATERIALES
+    # --- MERCADO INTERNACIONAL ---
     "GC=F":     {"desc": "Oro Futuros (Gold)", "tags": "oro metal refugio mineria minerales exterior commodity"},
     "GOLD":     {"desc": "Barrick Gold", "tags": "mineria oro metal minerales exterior barrick"},
     "FCX":      {"desc": "Freeport-McMoRan", "tags": "cobre mineria metal minerales exterior fcx"},
     "ALB":      {"desc": "Albemarle Corporation", "tags": "litio mineria quimica minerales baterias exterior"},
     "VALE":     {"desc": "Vale S.A.", "tags": "hierro mineria metal minerales exterior brasil vale"},
-
-    # TECNOLOGÍA
     "NVDA":     {"desc": "NVIDIA Corporation", "tags": "tecnologia ia inteligencia artificial chips semiconductores exterior nvidia"},
     "AAPL":     {"desc": "Apple Inc.", "tags": "tecnologia iphone hardware celulares software exterior apple"},
     "MSFT":     {"desc": "Microsoft Corporation", "tags": "tecnologia software windows nube ia exterior microsoft"},
-    "AMD":      {"desc": "Advanced Micro Devices", "tags": "tecnologia chips procesadores hardware semiconductores exterior amd"},
+    "AMD":     {"desc": "Advanced Micro Devices", "tags": "tecnologia chips procesadores hardware semiconductores exterior amd"},
     "TSM":      {"desc": "Taiwan Semiconductor", "tags": "tecnologia chips fabricacion semiconductores exterior tsmc"},
-
-    # ENERGÍA GLOBAL
     "XOM":      {"desc": "Exxon Mobil", "tags": "energia petroleo gas combustible exterior exxon"},
     "CVX":      {"desc": "Chevron Corporation", "tags": "energia petroleo gas combustible exterior chevron"},
     "SHEL":     {"desc": "Shell plc", "tags": "energia petroleo gas combustible exterior shell"},
     "BP":       {"desc": "BP plc (British Petroleum)", "tags": "energia petroleo gas combustible exterior bp"},
-
-    # COMUNICACIONES Y REDES SOCIALES
     "GOOGL":    {"desc": "Alphabet Inc. (Google)", "tags": "comunicaciones internet tecnologia buscador google exterior alphabet"},
     "META":     {"desc": "Meta Platforms (Facebook)", "tags": "comunicaciones redes sociales instagram metaverso exterior facebook meta"},
     "NFLX":     {"desc": "Netflix Inc.", "tags": "comunicaciones streaming entretenimiento peliculas exterior netflix"},
     "DIS":      {"desc": "The Walt Disney Company", "tags": "comunicaciones entretenimiento medios exterior disney"},
-
-    # AUTOMOTRICES / VEHÍCULOS (Eléctricos, Tradicionales, EE.UU., Japón, China y Europa)
     "TSLA":     {"desc": "Tesla Inc.", "tags": "automotrices autos electricos tecnologia baterias exterior tesla estados unidos usa"},
     "BYDDF":    {"desc": "BYD Company (Gigante Eléctrico)", "tags": "automotrices autos electricos china asiatico exterior byd vehiculos"},
     "NIO":      {"desc": "NIO Inc. (Autos Eléctricos)", "tags": "automotrices autos electricos china asiatico exterior nio vehiculos"},
@@ -89,8 +76,6 @@ UNIVERSO_ACTIVOS = {
     "GM":       {"desc": "General Motors", "tags": "automotrices autos industria vehiculos exterior gm tradicional estados unidos usa"},
     "TM":       {"desc": "Toyota Motor Corp", "tags": "automotrices autos vehiculos japon asiatico exterior toyota tradicional"},
     "RACE":     {"desc": "Ferrari N.V. (Lujo)", "tags": "automotrices autos vehiculos italia europa exterior ferrari lujo race"},
-
-    # ÍNDICE GENERAL GLOBAL
     "SPY":      {"desc": "S&P 500 ETF", "tags": "usa eeuu etf mercado exterior bolsa estados unidos general index"}
 }
 
@@ -104,28 +89,24 @@ def enviar_a_telegram(chat_id, texto):
 
 def ejecutar_busqueda(argumento, chat_id):
     if not argumento:
-        enviar_a_telegram(chat_id, "⚠️ <b>Uso correcto:</b> <code>/buscar [término/sector]</code>\n\n💡 Ejemplos:\n• <code>/buscar tecnologia</code>\n• <code>/buscar electricos</code>\n• <code>/buscar minerales</code>\n• <code>/buscar china</code>")
+        enviar_a_telegram(chat_id, "⚠️ <b>Uso correcto:</b> <code>/buscar [término/sector]</code>\n\n💡 Ejemplos:\n• <code>/buscar dolar</code>\n• <code>/buscar estable</code>\n• <code>/buscar cripto</code>")
         return
 
-    # Normalizamos el término de búsqueda quitando acentos comunes de forma directa
     termino = argumento.lower().strip()
     termino = termino.replace("é", "e").replace("á", "a").replace("í", "i").replace("ó", "o").replace("ú", "u")
     
     resultados = []
 
-    # Escaneo en Ticker, Nombre y Etiquetas de Sector
     for ticker, info in UNIVERSO_ACTIVOS.items():
         nombre_completo = info["desc"].lower()
         etiquetas = info["tags"]
         
         if termino in ticker.lower() or termino in nombre_completo or termino in etiquetas:
-            # Estructuramos el comando de análisis limpio según las reglas de tu bot
             alias_corto = ticker.replace(".BA", "").replace("-USD", "").replace("=F", "")
-            if alias_corto == "YPFD": alias_corto = "YPF" # Atajo limpio para YPF
+            if alias_corto == "YPFD": alias_corto = "YPF"
             
             resultados.append(f"🏢 <b>{info['desc']}</b> ({ticker})\n• Analizar: /analizar {alias_corto}")
 
-    # Envío de la respuesta formateada a Telegram
     if not resultados:
         enviar_a_telegram(chat_id, f"❌ No encontré ningún activo o sector relacionado con '<b>{argumento}</b>'.")
     else:
