@@ -30,7 +30,7 @@ UNIVERSO_ACTIVOS = {
     "VALO.BA":  "Banco de Valores",
     "YPFD.BA":  "YPF Clase D",
     
-    # --- CRIPTOMONEDAS ---
+    # --- CRIPTOMONEDAS VOLÁTILES ---
     "BTC-USD":  "Bitcoin USD",
     "ETH-USD":  "Ethereum USD",
     "BNB-USD":  "Binance Coin USD",
@@ -41,6 +41,11 @@ UNIVERSO_ACTIVOS = {
     "DOT-USD":  "Polkadot USD",
     "LINK-USD": "Chainlink USD",
     "DOGE-USD": "Dogecoin USD",
+    
+    # --- CRIPTOMONEDAS ESTABLES (STABLECOINS) ---
+    "USDT-USD": "Tether USD (USDT)",
+    "USDC-USD": "USD Coin (USDC)",
+    "DAI-USD":  "Dai (DAI)",
     
     # --- SECTOR AGRO ---
     "CRES.BA":  "Cresud",
@@ -85,7 +90,7 @@ def enviar_a_telegram(chat_id, texto):
         print(f"[ERROR Telegram Analizar]: {e}")
 
 def mapear_argumento(argumento):
-    """Mapea alias cortos (ej: ggal, btc, tsla) al ticker real de Yahoo Finanzas"""
+    """Mapea alias cortos (ej: ggal, btc, usdt, ada) al ticker real de Yahoo Finanzas"""
     arg_limpio = argumento.upper().strip()
     
     # Casos especiales de atajos manuales
@@ -124,9 +129,20 @@ def ejecutar_analisis(argumento, chat_id):
     enviar_a_telegram(chat_id, f"📊 <i>Ruk ejecutando Escáner Multi-Temporal y de Volumen para {ticker_real}...</i>")
 
     try:
-        # Descargamos los últimos 2 años de datos diarios directamente
-        ticker_yf = yf.Ticker(ticker_real)
-        df = ticker_yf.history(period="2y")
+        # Intentamos primero con la sesión simulada (ideal para evitar bloqueos en el Merval)
+        try:
+            import requests
+            sesion = requests.Session()
+            sesion.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'})
+            ticker_yf = yf.Ticker(ticker_real, session=sesion)
+            df = ticker_yf.history(period="2y")
+        except:
+            df = pd.DataFrame() # Si falla, lo dejamos vacío para que use el método directo abajo
+
+        # Salvavidas: Si la sesión falló o devolvió datos vacíos (común en algunas criptos), descarga directo
+        if df.empty:
+            ticker_yf = yf.Ticker(ticker_real)
+            df = ticker_yf.history(period="2y")
 
         if df.empty or len(df) < 30:
             enviar_a_telegram(chat_id, f"❌ No hay historial suficiente en Yahoo Finanzas para analizar <code>{ticker_real}</code>.")
@@ -195,7 +211,7 @@ def ejecutar_analisis(argumento, chat_id):
         puntaje_total = puntos_tendencia + puntos_volumen
         precio_final = df["Close"].iloc[-1]
         
-        # Filtro inteligente de moneda: Si termina en .BA pero no es CEDEAR, usa Pesos
+        # Filtro inteligente de moneda
         es_merval_puro = ticker_real.endswith(".BA") and ticker_real not in ["CRES.BA", "MOLA.BA", "LEDE.BA"]
         moneda = "$" if es_merval_puro else "USD"
 
