@@ -3,11 +3,78 @@ import requests
 import pandas as pd
 import yfinance as yf
 
-# --- IMPORTAMOS LAS LISTAS Y DICCIONARIOS DE TUS ARCHIVOS NATIVOS ---
-from bot_merval import panel_lider, panel_general
-from bot_yahooFinanzas import ACTIVOS as ACTIVOS_YFINANZAS
-
 TOKEN = os.getenv("TOKEN_BOT")
+
+# BASE DE DATOS MAESTRA UNIFICADA (Para validar y mapear los análisis)
+UNIVERSO_ACTIVOS = {
+    # --- PANEL LÍDER MERVAL (ARGENTINA) ---
+    "ALUA.BA":  "Aluar (Aluminio)",
+    "BBAR.BA":  "Banco BBVA Argentina",
+    "BMA.BA":   "Banco Macro",
+    "BYMA.BA":  "Bolsas y Mercados Argentinos",
+    "CEPU.BA":  "Central Puerto",
+    "COME.BA":  "Sociedad Comercial del Plata",
+    "EDN.BA":   "Edenor",
+    "GGAL.BA":  "Grupo Financiero Galicia",
+    "IRSA.BA":  "IRSA",
+    "LOMA.BA":  "Loma Negra",
+    "METR.BA":  "Metrogas",
+    "MIRG.BA":  "Mirgor",
+    "PAMP.BA":  "Pampa Energía",
+    "SUPV.BA":  "Banco Supervielle",
+    "TECO2.BA": "Telecom Argentina",
+    "TGNO4.BA": "Transportadora Gas del Norte",
+    "TGSU2.BA": "Transportadora Gas del Sur",
+    "TRAN.BA":  "Transener",
+    "TXAR.BA":  "Ternium Argentina",
+    "VALO.BA":  "Banco de Valores",
+    "YPFD.BA":  "YPF Clase D",
+    
+    # --- CRIPTOMONEDAS ---
+    "BTC-USD":  "Bitcoin USD",
+    "ETH-USD":  "Ethereum USD",
+    "BNB-USD":  "Binance Coin USD",
+    "SOL-USD":  "Solana USD",
+    "XRP-USD":  "Ripple USD",
+    "ADA-USD":  "Cardano USD",
+    "AVAX-USD": "Avalanche USD",
+    "DOT-USD":  "Polkadot USD",
+    "LINK-USD": "Chainlink USD",
+    "DOGE-USD": "Dogecoin USD",
+    
+    # --- SECTOR AGRO ---
+    "CRES.BA":  "Cresud",
+    "MOLA.BA":  "Molinos Agro",
+    "LEDE.BA":  "Ledesma",
+
+    # --- MERCADO INTERNACIONAL ---
+    "GC=F":     "Oro Futuros",
+    "GOLD":     "Barrick Gold",
+    "FCX":      "Freeport-McMoRan (Cobre)",
+    "ALB":      "Albemarle Corp (Litio)",
+    "VALE":     "Vale S.A. (Hierro)",
+    "NVDA":     "NVIDIA Corporation",
+    "AAPL":     "Apple Inc.",
+    "MSFT":     "Microsoft Corporation",
+    "AMD":      "Advanced Micro Devices",
+    "TSM":      "Taiwan Semiconductor",
+    "XOM":      "Exxon Mobil",
+    "CVX":      "Chevron Corporation",
+    "SHEL":     "Shell plc",
+    "BP":       "BP plc",
+    "GOOGL":    "Alphabet Inc. (Google)",
+    "META":     "Meta Platforms",
+    "NFLX":     "Netflix Inc.",
+    "DIS":      "The Walt Disney Company",
+    "TSLA":     "Tesla Inc.",
+    "BYDDF":    "BYD Company",
+    "NIO":      "NIO Inc.",
+    "F":        "Ford Motor Company",
+    "GM":       "General Motors",
+    "TM":       "Toyota Motor Corp",
+    "RACE":     "Ferrari N.V.",
+    "SPY":      "S&P 500 ETF"
+}
 
 def enviar_a_telegram(chat_id, texto):
     url     = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -17,26 +84,20 @@ def enviar_a_telegram(chat_id, texto):
     except Exception as e: 
         print(f"[ERROR Telegram Analizar]: {e}")
 
-def obtener_universo_activos():
-    activos_maestro = {}
-    for ticker, desc in ACTIVOS_YFINANZAS.items(): 
-        activos_maestro[ticker] = desc
-    for ticker in panel_lider:
-        if ticker not in activos_maestro:
-            activos_maestro[ticker] = f"{ticker.replace('.BA', '')} (Panel Líder)"
-    for ticker in panel_general:
-        if ticker not in activos_maestro:
-            activos_maestro[ticker] = f"{ticker.replace('.BA', '')} (Panel General)"
-    return activos_maestro
-
-def mapear_argumento(argumento, activos_maestro):
-    mapeo = {}
-    for ticker in activos_maestro.keys():
+def mapear_argumento(argumento):
+    """Mapea alias cortos (ej: ggal, btc, tsla) al ticker real de Yahoo Finanzas"""
+    arg_limpio = argumento.upper().strip()
+    
+    # Casos especiales de atajos manuales
+    if arg_limpio == "YPF": return "YPFD.BA"
+    
+    # Verificación directa de alias cortos quitando extensiones conocidas
+    for ticker in UNIVERSO_ACTIVOS.keys():
         corto = ticker.replace(".BA", "").replace("-USD", "").replace("=F", "")
-        mapeo[corto] = ticker
-        mapeo[ticker] = ticker
-    mapeo["YPF"] = "YPFD.BA"
-    return mapeo.get(argumento)
+        if arg_limpio == corto or arg_limpio == ticker:
+            return ticker
+            
+    return None
 
 def calcular_tendencia_porcentual(df, dias):
     """Calcula la variación del precio en una ventana de días específica"""
@@ -53,14 +114,13 @@ def ejecutar_analisis(argumento, chat_id):
         enviar_a_telegram(chat_id, "⚠️ <b>Uso correcto:</b> <code>/analizar [ACTIVO]</code>")
         return
 
-    activos_maestro = obtener_universo_activos()
-    ticker_real = mapear_argumento(argumento, activos_maestro)
+    ticker_real = mapear_argumento(argumento)
 
     if not ticker_real:
-        enviar_a_telegram(chat_id, f"❌ El activo <b>{argumento}</b> no está en tus paneles.")
+        enviar_a_telegram(chat_id, f"❌ El activo <b>{argumento}</b> no está registrado en tus paneles de análisis.")
         return
 
-    nombre_activo = activos_maestro.get(ticker_real, ticker_real)
+    nombre_activo = UNIVERSO_ACTIVOS.get(ticker_real, ticker_real)
     enviar_a_telegram(chat_id, f"📊 <i>Ruk ejecutando Escáner Multi-Temporal y de Volumen para {ticker_real}...</i>")
 
     try:
@@ -75,7 +135,6 @@ def ejecutar_analisis(argumento, chat_id):
         # --------------------------------------------------------
         # 1. BLOQUE DE ANÁLISIS MULTI-TEMPORAL (Tendencias)
         # --------------------------------------------------------
-        # Aproximamos los meses asumiendo 21 días hábiles de bolsa por mes
         t_2anos   = calcular_tendencia_porcentual(df, 504)
         t_1ano    = calcular_tendencia_porcentual(df, 252)
         t_10meses = calcular_tendencia_porcentual(df, 210)
@@ -87,7 +146,7 @@ def ejecutar_analisis(argumento, chat_id):
         t_1mes    = calcular_tendencia_porcentual(df, 21)
         t_20dias  = calcular_tendencia_porcentual(df, 20)
         
-        # Última semana día por día (Rueda de los últimos 5-7 días hábiles)
+        # Última semana día por día
         df_semana = df.tail(6)
         linea_semana = []
         for i in range(1, len(df_semana)):
@@ -102,14 +161,13 @@ def ejecutar_analisis(argumento, chat_id):
         # 2. BLOQUE DE VOLUMEN Y FLUJO DE OPERADORES
         # --------------------------------------------------------
         volumen_actual = df["Volume"].iloc[-1]
-        volumen_promedio_corto = df["Volume"].tail(10).mean() # Promedio últimas 2 semanas
+        volumen_promedio_corto = df["Volume"].tail(10).mean()
         
-        # Medimos la presión: precio sube + volumen sube = Operadores Comprando Fuertes
         precio_sube_hoy = df["Close"].iloc[-1] > df["Close"].iloc[-2]
-        volumen_alto = volumen_actual > volumen_promedio_corto * 1.15 # 15% arriba de la media
+        volumen_alto = volumen_actual > volumen_promedio_corto * 1.15
         
         fuerza_operadores = "⚖️ Volumen Normal"
-        puntos_volumen = 0 # Balance de fuerza compradores vs vendedores
+        puntos_volumen = 0
         
         if precio_sube_hoy and volumen_alto:
             fuerza_operadores = "🔥 <b>COMPRADORES FUERTES</b> (Inyección de capital institucional)"
@@ -127,28 +185,29 @@ def ejecutar_analisis(argumento, chat_id):
         # --------------------------------------------------------
         # 3. SISTEMA DE PUNTAJE Y VEREDICTO FINAL
         # --------------------------------------------------------
-        # Evaluamos las tendencias de corto, mediano y largo plazo
         puntos_tendencia = 0
         listado_tendencias = [t_2anos, t_1ano, t_10meses, t_8meses, t_5meses, t_4meses, t_3meses, t_2meses, t_1mes, t_20dias]
         
         for t in listado_tendencias:
-            if t > 2: puntos_tendencia += 1   # Tendencia alcista suma puntos
-            if t < -2: puntos_tendencia -= 1  # Tendencia bajista resta puntos
+            if t > 2: puntos_tendencia += 1
+            if t < -2: puntos_tendencia -= 1
             
         puntaje_total = puntos_tendencia + puntos_volumen
         precio_final = df["Close"].iloc[-1]
-        moneda = "USD" if "-USD" in ticker_real or ticker_real in ["SPY", "NVDA", "GC=F"] else "$"
+        
+        # Filtro inteligente de moneda: Si termina en .BA pero no es CEDEAR, usa Pesos
+        es_merval_puro = ticker_real.endswith(".BA") and ticker_real not in ["CRES.BA", "MOLA.BA", "LEDE.BA"]
+        moneda = "$" if es_merval_puro else "USD"
 
-        # Clasificación del Veredicto Técnico
         if puntaje_total >= 6:
             veredicto = "🟢 <b>CONVIENE COMPRAR</b>\n🎯 <i>Tendencia multi-temporal firmemente alcista alineada con el ingreso de operadores con volumen fuerte.</i>"
-            sugerencia_comando = f"<code>/invertir {argumento}</code>"
+            sugerencia_comando = f"<code>/invertir {argumento.lower()}</code>"
         elif puntaje_total <= -4:
             veredicto = "🔴 <b>CONVIENE VENDER / EVITAR</b>\n⚠️ <i>Presión vendedora dominante y deterioro estructural de las tendencias en múltiples plazos.</i>"
             sugerencia_comando = "<i>No se sugiere compra. Monitorear estabilidad.</i>"
         else:
             veredicto = "🟡 <b>ZONA NEUTRA (Esperar Confirmación)</b>\n⚖️ <i>Señales mixtas entre plazos temporales o falta de volumen acompañando el movimiento.</i>"
-            sugerencia_comando = f"<i>Podés forzar la orden si querés con:</i> <code>/invertir {argumento}</code>"
+            sugerencia_comando = f"<i>Podés forzar la orden si querés con:</i> <code>/invertir {argumento.lower()}</code>"
 
         # --------------------------------------------------------
         # 4. REPORTE VISUAL A TELEGRAM
