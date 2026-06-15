@@ -90,7 +90,7 @@ def procesar_comando(texto, chat_id):
             "🌱 /agro → Resumen de activos agro\n"
             "📊 /analizar [activo] → Analiza si conviene comprar o vender\n"
             "🔍 /btc → Info de Bitcoin\n"
-            "🔍 /buscar [nombre] → Busca el código exacto de una empresa\n"
+            "🔍 /buscar [nombre] → Ej: /buscar galicia (Te da el código para analizar)\n"
             "📊 /estado → Posiciones abiertas y capital actual\n"
             "📈 /historial → Últimas 5 operaciones realizadas\n"
             "🚀 /invertir [activo] → Envía la orden de compra real a GitHub\n"
