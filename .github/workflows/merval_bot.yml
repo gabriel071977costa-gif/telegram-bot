@@ -1,14 +1,21 @@
 name: Run Merval Bot
-
 on:
   workflow_dispatch:
   schedule:
-    # Apertura: 10:45–10:55 AR → 13:45–13:55 UTC
-    - cron: '45 13 * * 1-5'
-    - cron: '50 13 * * 1-5'
-    - cron: '55 13 * * 1-5'
-
-    # Alertas horarias: cada hora de 11 a 17 AR → 14 a 20 UTC
+    # UN SOLO CRON POR HORA (cuenta gratuita)
+    # GitHub acumula y dispara juntos si hay muchos crons → llegan en ráfaga
+    # Con 1 cron por hora el scheduler no tiene cola que acumular
+    #
+    # Horario AR → UTC (Argentina = UTC-3 todo el año, sin horario de verano)
+    # 10:00 AR → 13:00 UTC  (apertura temprana)
+    # 11:00 AR → 14:00 UTC
+    # 12:00 AR → 15:00 UTC
+    # 13:00 AR → 16:00 UTC
+    # 14:00 AR → 17:00 UTC
+    # 15:00 AR → 18:00 UTC
+    # 16:00 AR → 19:00 UTC
+    # 17:00 AR → 20:00 UTC  (cierre)
+    - cron: '0 13 * * 1-5'
     - cron: '0 14 * * 1-5'
     - cron: '0 15 * * 1-5'
     - cron: '0 16 * * 1-5'
@@ -16,7 +23,6 @@ on:
     - cron: '0 18 * * 1-5'
     - cron: '0 19 * * 1-5'
     - cron: '0 20 * * 1-5'
-
 
 jobs:
   run-bot:
@@ -31,11 +37,20 @@ jobs:
           python-version: '3.11'
 
       - name: Instalar dependencias
-        run: |
-          pip install requests pytz yfinance
+        run: pip install requests pytz yfinance
 
       - name: Ejecutar Script Merval
         env:
           TOKEN_BOT: ${{ secrets.TOKEN_BOT }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: python bot_merval.py
+
+      # Keep-alive: commit vacío semanal para que GitHub
+      # no desactive el workflow por inactividad (límite 60 días)
+      - name: Keep-alive semanal
+        if: github.event.schedule == '0 13 * * 1-5'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: keep-alive $(date -u '+%Y-%m-%d')"
+          git push
