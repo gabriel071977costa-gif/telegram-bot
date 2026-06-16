@@ -363,7 +363,8 @@ def ejecutar_analisis(argumento, chat_id):
         t_30dias   = calcular_tendencia_porcentual(df, 21)   # ~30 días hábiles
         t_2semanas = calcular_tendencia_porcentual(df, 10)   # ~2 semanas hábiles
 
-        # Última semana día por día (muestra evolución reciente diaria)
+        # Última semana día por día con fecha real (solo para mostrar en el reporte)
+        # Las 2 semanas (t_2semanas) ya se usan como variable de tendencia en el puntaje
         df_semana = df.tail(6)
         linea_semana = []
         for i in range(1, len(df_semana)):
@@ -371,7 +372,11 @@ def ejecutar_analisis(argumento, chat_id):
             cierre_ayer = df_semana["Close"].iloc[i - 1]
             var_dia     = ((cierre_hoy - cierre_ayer) / cierre_ayer) * 100
             emoji_dia   = "🔺" if var_dia >= 0 else "🔻"
-            linea_semana.append(f"{emoji_dia} d{i}: {var_dia:+.2f}%")
+            try:
+                label_dia = df_semana.index[i].strftime("%a %d/%m")
+            except:
+                label_dia = f"d{i}"
+            linea_semana.append(f"{emoji_dia} {label_dia}: {var_dia:+.2f}%")
         semana_str = " | ".join(linea_semana)
 
         # Sistema de puntos por tendencias: +1 si sube más de 2%, -1 si baja más de 2%
@@ -477,7 +482,7 @@ def ejecutar_analisis(argumento, chat_id):
             f"• 30 Días: <code>{t_30dias:+.1f}%</code>  | 2 Semanas: <code>{t_2semanas:+.1f}%</code>\n"
             f"──────────────────────\n"
             f"📅 <b>ÚLTIMA SEMANA (Día a Día):</b>\n"
-            f"<code>{semana_str}</code>\n"
+            f"{semana_str}\n"
             f"──────────────────────\n"
             f"🔍 <b>PATRONES MÍNIMOS/MÁXIMOS:</b>\n"
             f"{patrones_str}\n"
