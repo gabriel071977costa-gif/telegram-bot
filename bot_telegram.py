@@ -9,6 +9,7 @@
 #   - Preguntas específicas (ej: nombre del bot) importadas de preguntas.py
 #   - Webhook con Flask para Render (plan gratuito)
 #   - Integración con comandos.py para manejar /agro, /ayuda, etc.
+#   - Publicación de señales en el canal de Telegram (Traiding Señales)
 # ------------------------------------------------------------
 
 import os
@@ -61,6 +62,21 @@ else:
 
 # --- CHAT_ID FIJO PARA CICLO AUTOMÁTICO ---
 CHAT_ID = os.getenv("CHAT_ID") or "TU_CHAT_ID_AQUI"  # reemplazá con tu chat ID real
+
+# --- ACA CONECTA AL CANAL ---
+# CANAL_ID es el chat_id del canal "Traiding Señales" donde el bot (Ruk)
+# fue agregado como administrador con permiso de publicar mensajes.
+# Se puede sobreescribir desde una variable de entorno en Render (CANAL_ID),
+# o usar el username público del canal como valor por defecto.
+CANAL_ID = os.getenv("CANAL_ID") or "@traidingSenalesArg"
+
+def publicar_en_canal(texto):
+    """Publica un mensaje en el canal de señales (Traiding Señales)."""
+    try:
+        bot.send_message(CANAL_ID, texto)
+        print(f"✅ Publicado en canal: {texto[:50]}...")
+    except Exception as e:
+        print(f"❌ Error al publicar en canal: {e}")
 
 # --- COMANDO /start ---
 @bot.message_handler(commands=['start'])
@@ -136,6 +152,21 @@ def webhook():
     print("DEBUG: Mensaje recibido por bot_telegram.py vía webhook")  # <-- agregado
     update = telebot.types.Update.de_json(request.stream.read().decode("utf-8"))
     bot.process_new_updates([update])
+    return "OK", 200
+
+# --- ENDPOINT PARA RECIBIR SEÑALES DE bot_yahooFinanzas.py ---
+# bot_yahooFinanzas.py corre en GitHub Actions y no tiene un proceso
+# corriendo permanentemente, así que en lugar de "conectarse" directo,
+# le hace un POST a este endpoint con el mensaje ya armado.
+# Ese mensaje se reenvía automáticamente al canal "Traiding Señales".
+@app.route('/senal', methods=['POST'])
+def recibir_senal():
+    data = request.get_json()
+    if not data or "mensaje" not in data:
+        return "Falta el campo 'mensaje'", 400
+
+    mensaje = data["mensaje"]
+    publicar_en_canal(mensaje)   # <-- ACA CONECTA AL CANAL
     return "OK", 200
 
 if __name__ == "__main__":
