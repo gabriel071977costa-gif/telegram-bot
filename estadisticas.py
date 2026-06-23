@@ -5,15 +5,21 @@
 # Se integra con comandos.py
 # ============================================================
 
-# Importamos las funciones que ya existen en comandos.py
-# para no duplicar código (leer de GitHub y enviar a Telegram)
-from comandos import leer_json_github, enviar_a_telegram
+# NOTA IMPORTANTE: NO importamos nada de comandos.py acá.
+# comandos.py importa este archivo (estadisticas.py), así que si
+# este archivo también importara de comandos.py, se forma un
+# import circular y Python rompe al arrancar el bot.
+# En cambio, recibimos las funciones leer_json_github y enviar_a_telegram
+# como parámetros desde comandos.py cuando se llama a ejecutar_stats().
 
 
-def ejecutar_stats(chat_id):
+def ejecutar_stats(chat_id, leer_json_github, enviar_a_telegram):
     """
     Calcula y envía estadísticas de performance:
     winrate, ganancia/pérdida promedio, profit factor y drawdown máximo.
+
+    Recibe leer_json_github y enviar_a_telegram como parámetros
+    (en vez de importarlas) para evitar un import circular con comandos.py.
     """
     estado = leer_json_github("estado_simulacion.json")
     if not estado:
