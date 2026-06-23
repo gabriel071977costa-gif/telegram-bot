@@ -9,7 +9,7 @@
 #   - Preguntas específicas (ej: nombre del bot) importadas de preguntas.py
 #   - Webhook con Flask para Render (plan gratuito)
 #   - Integración con comandos.py para manejar /agro, /ayuda, etc.
-#   - Publicación de señales en el canal de Telegram (Traiding Señales)
+#   - Publicación de señales en el canal de Telegram (Trading Señales)
 # ------------------------------------------------------------
 
 import os
