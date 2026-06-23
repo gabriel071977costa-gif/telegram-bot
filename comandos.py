@@ -12,6 +12,7 @@ import requests
 from analizar import ejecutar_analisis
 from invertir import ejecutar_inversion
 from buscar import ejecutar_busqueda
+from estadisticas import ejecutar_stats
 
 # ------------------------------------------------------------
 # CONFIGURACIÓN
@@ -95,6 +96,7 @@ def procesar_comando(texto, chat_id):
             "📈 /historial → Últimas 5 operaciones realizadas\n"
             "🚀 /invertir [activo] → Envía la orden de compra real a GitHub\n"
             "⚙️ /ping → Verificar que Ruk está activo\n"
+            "📊 /stats → Winrate, drawdown y métricas de performance\n"
             "🔍 /ypf → Info de YPF\n"
         )
 
@@ -244,6 +246,13 @@ def procesar_comando(texto, chat_id):
             f"🏦 Capital inicial: ${cap_ini:.2f}\n"
             f"{emoji} Ganancia/Pérdida: <b>${ganancia:+.2f}</b>"
         )
+
+    # --------------------------------------------------------
+    # /stats → winrate, drawdown y métricas de performance
+    # Lógica completa vive en estadisticas.py
+    # --------------------------------------------------------
+    elif texto == "/stats":
+        ejecutar_stats(chat_id)
 
     # --------------------------------------------------------
     # COMANDOS CON ARGUMENTOS (Ruteo modularizado)
