@@ -68,10 +68,10 @@ CHAT_ID = os.getenv("CHAT_ID") or "TU_CHAT_ID_AQUI"  # reemplazá con tu chat ID
 # fue agregado como administrador con permiso de publicar mensajes.
 # Se puede sobreescribir desde una variable de entorno en Render (CANAL_ID),
 # o usar el username público del canal como valor por defecto.
-CANAL_ID = os.getenv("CANAL_ID") or "@traidingSenalesArg"
+CANAL_ID = os.getenv("CANAL_ID") or "@tradingSenalesArg"
 
 def publicar_en_canal(texto):
-    """Publica un mensaje en el canal de señales (Traiding Señales)."""
+    """Publica un mensaje en el canal de señales (Trading Señales)."""
     try:
         bot.send_message(CANAL_ID, texto)
         print(f"✅ Publicado en canal: {texto[:50]}...")
